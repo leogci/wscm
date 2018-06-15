@@ -1,0 +1,841 @@
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.gci.siarp.cuentasMedicas.dao.FacturaDao">
+
+	<select id="consultarCuenta" resultType="Long">
+		SELECT ID_CUENTA 
+		FROM medilab_pasiste.dbo.PA_MA_CUENTA 
+		WHERE ID_CUENTA = #{idCuenta} AND ESTADO_AUD='A'
+	</select>
+
+	<select id="getCuentaById" resultType="com.gci.siarp.cuentasMedicas.domain.Cuenta">
+		SELECT ID_CUENTA idCuenta,ID_TIPO_SOL idTipoSol, FECHA_RADICADO	fechaRadicado, ID_TIPO_DOC idTipoDOC, ID_PROVEEDOR idProveedor,DV_EMPRESA dvEmpresa,TIPO_INGRESO_CUENTA tipoIngresoCuenta,
+		 ID_SECCIONAL idSeccional,NUMERO_FOLIOS numeroFolios, NUMERO_FACTURAS numeroFacturas, VALOR_CUENTA valorCuenta, ORDEN_PAGO ordenPago, FECHA_OP fechaOP, IND_ESTADO_CUENTA indEstadoCuenta, CDP CDP,
+		 FECHA_CDP fechaCDP, RP RP, FECHA_RP fechaRP, FECHA_ESTADO fechaEstado, ID_PROFESIONAL idProfesional, IND_REEMBOLSO indReembolso
+		FROM medilab_pasiste.dbo.PA_MA_CUENTA
+		WHERE ID_CUENTA = #{idCuenta} AND ESTADO_AUD ='A'
+	</select>
+
+	<insert id="insertarCuenta" parameterType="com.gci.siarp.cuentasMedicas.domain.Cuenta">
+		INSERT INTO medilab_pasiste.dbo.PA_MA_CUENTA (ID_CUENTA, FECHA_RADICADO,TIPO_INGRESO_CUENTA, ID_SECCIONAL, NUMERO_FACTURAS, VALOR_CUENTA,IND_ESTADO_CUENTA, FECHA_MODIFICACION_AUD,USUARIO_AUD,
+													  MAQUINA_AUD,OPERACION_AUD, ESTADO_AUD)
+		select 	#{idCuenta},getdate(),'A',0,#{numeroFacturas},0,'I',getdate(),#{usuarioAud},#{maquinaAud},'I','A'
+	</insert>
+
+	<select id="consultaridTipoSol" resultType="Integer">
+		SELECT ID_TIPO_SOL
+		FROM medilab_pasiste.dbo.PA_MA_PROVEEDOR 
+		WHERE ID_TIPO_DOC= #{idTipoDocProv} AND ID_PROVEEDOR= #{idProveedor} AND ESTADO_AUD='A'
+	</select>
+
+	<select id="consultarSucursalDM" resultType="Long">
+		SELECT MIN(ID_SUCURSAL) 
+		FROM medilab_pasiste.dbo.PA_MA_SUCURSAL 
+		WHERE ID_TIPO_DOC=#{idTipoDocProv} AND ID_PROVEEDOR =#{idProveedor} AND ESTADO_AUD='A'AND ID_DEPARTAMENTO=#{idDepartamento} AND ID_MUNICIPIO=#{idMunicipio}
+	</select>
+
+	<select id="consultarSucursal" resultType="Long">
+		SELECT MIN(ID_SUCURSAL) 
+		FROM medilab_pasiste.dbo.PA_MA_SUCURSAL 
+		WHERE ID_TIPO_DOC=#{idTipoDocProv} AND ID_PROVEEDOR =#{idProveedor} AND	ESTADO_AUD='A'
+	</select>
+
+	<select id="consultarCODSISE" resultType="Integer">
+		SELECT sec.COD_SISE
+		FROM siarp.dbo.GRAL_MA_SECCIONAL sec 
+		INNER JOIN siarp.dbo.GRAL_PM_MUNICIPIO mun 
+		ON sec.id_seccional=mun.id_sucursal
+		WHERE mun.ID_DEPARTAMENTO =#{idDepartamento} AND mun.ID_MUNICIPIO =#{idMunicipio} AND mun.ESTADO_AUD='A'
+	</select>
+
+	<insert id="insertarFactura">
+		INSERT INTO medilab_pasiste.dbo.PA_MV_FACTURA (ID_CUENTA,ID_FACTURA,ID_TIPO_DOC_EMPRESA,ID_EMPRESA, ID_TIPO_DOC,ID_PERSONA,ID_DX,NOMBRE_DX,ID_FURAT_FUREP, FECHA_ATEP,TIPO_SINIESTRO,
+		  VALOR_NETO, VALOR_BRUTO,NUMERO_AUTORIZACION,IND_RECOBRO,IND_REINGRESO, ind_estado_factura, FECHA_ESTADO,NOTA_CREDITO,FECHA_MODIFICACION_AUD,USUARIO_AUD, MAQUINA_AUD,OPERACION_AUD,
+		  ESTADO_AUD,FACTURA,FECHA_FACTURA,ID_SECCIONAL,VALOR_IVA, ID_PROVEEDOR,ID_TIPO_DOC_PROV, PREFIJO_FACTURA,FECHA_SERVICIO,FECHA_AUTORIZACION,ID_SUCURSAL, IND_PPARCIAL,IND_PPORCENTAJE,
+		  ID_TIPO_SOL,COD_STIKKER,IND_VRCERTIFICADO,RECON_RESERVA,TIPO_INCONSISTENCIA, ID_SOLPAGO,ID_DEPARTAMENTO, ID_MUNICIPIO,AUD_CONCURRENTE, FECHA_RADICACION, ID_AUDITOR_CONCURRENTE,
+		  ID_RADICADOR, RETORNO_SISE,COD_SUCURSAL,COD_SAP)
+		values(#{idCuenta},#{idFactura},#{IdTipoDocEmpresa},#{IdEmpresa},#{IdTipoDoc},#{IdPersona},#{IdDX},#{NombreDX},#{IdFuratFurep},#{FechaAtep},#{TipoSiniestro},#{ValorNeto},
+		  #{ValorBruto},#{NumeroAutorizacion},0,0,#{IndEstadoFactura},getdate(),#{NotaCredito},getdate(),#{ps_usuario},#{ps_maquina},'I','A',#{Factura},#{FechaFactura},#{IdSeccional},
+		  #{ValorIVA},#{IdProveedor}, #{IdTipoDocProv}, #{PrefijoFactura},#{FechaServicio},#{FechaAutorizacion}, #{IdSucursal} ,0,0, #{IdTipoSOl}, #{CodSTIKKER},#{indVlrCertificado},#{reconReserva},' ',0,
+		  #{IdDepartamento},#{IdMunicipio}, #{AudConcurrente},#{FechaRadicacion}, #{IdAuditorConcurrente}, #{IdRadicador},'SIN CAUSAR', #{l_codsise},#{codSAP})
+	</insert>
+
+	<update id="actualizarValorCuenta">
+		UPDATE medilab_pasiste..PA_MA_CUENTA 
+		SET  USUARIO_AUD = 	#{usuarioAud},
+			 MAQUINA_AUD = #{maquinaAud},
+		     NUMERO_FACTURAS=#{numeroFacturas}, 
+		     VALOR_CUENTA= ( SELECT SUM(VALOR_NETO -NOTA_CREDITO)
+							 FROM medilab_pasiste..PA_MV_FACTURA
+							 WHERE ID_CUENTA=#{idCuenta})
+		WHERE ID_CUENTA= #{idCuenta} AND ESTADO_AUD='A'
+	</update>
+
+	<select id="existeSiniestro" resultType="Long">
+		SELECT ATEP_MA_SINIESTRO.ID_SINIESTRO
+		FROM siarp.dbo.GRAL_MA_PERSONA GRAL_MA_PERSONA
+		INNER JOIN siniestros_socupa.dbo.ATEP_MA_SINIESTRO ATEP_MA_SINIESTRO
+		ON (GRAL_MA_PERSONA.ID_TIPO_DOC = ATEP_MA_SINIESTRO.ID_TIPO_DOC)
+		AND (GRAL_MA_PERSONA.ID_PERSONA = ATEP_MA_SINIESTRO.ID_PERSONA)
+		WHERE (GRAL_MA_PERSONA.ID_TIPO_DOC = #{idTipoDoc})
+		AND (GRAL_MA_PERSONA.ID_PERSONA = #{idPersona})
+		AND	(ATEP_MA_SINIESTRO.FECHA_AT = #{fechaAtep})
+		AND (ATEP_MA_SINIESTRO.ID_SINIESTRO = #{idFuratFurep})
+		AND (GRAL_MA_PERSONA.ESTADO_AUD='A')
+		AND (ATEP_MA_SINIESTRO.ESTADO_AUD='A')
+	</select>
+
+	<select id="consultarNombreRubro" resultType="String">
+		SELECT DESCRIPCION
+		FROM medilab_pasiste.dbo.PA_PM_RUBROS
+		WHERE (ID_RUBRO = #{idRubro} and ESTADO_AUD = 'A' ) OR (CREDITO_SAP = #{idRubro} and ESTADO_AUD = 'A')
+		
+		
+	</select>
+
+	<select id="consultarNombreRubroComision" resultType="com.gci.siarp.cuentasMedicas.domain.Parametros">
+		SELECT DESCRIPCION as descripcion, ID_RUBRO as valor, ESTADO_AUD as estadoAUD, USUARIO_AUD as usuarioAUD, MAQUINA_AUD as maquinaAUD, FECHA_MODIFICACION_AUD as fechaModificacionAUD
+  		FROM medilab_pasiste.dbo.PA_PM_RUBROS
+  		WHERE  COMISION = 1 and ESTADO_AUD = 'A'
+	</select>
+
+	<insert id="insertarRubro">
+		INSERT INTO medilab_pasiste.dbo.PA_MV_RUBRO (ID_CUENTA,ID_FACTURA,CONSECUTIVO, ID_RUBRO,NOMBRE_RUBRO, VALOR_RUBRO,VALOR_IVA,VALOR_NC,FECHA_MODIFICACION_AUD,USUARIO_AUD,
+						MAQUINA_AUD,OPERACION_AUD, ESTADO_AUD)
+		select #{idCuenta},#{idFactura},#{consecutivo},#{idRubro},#{s_nombreRubro},#{valorNeto},#{ValorIVA},#{variableSaldos},getdate(),#{ps_usuario},#{ps_maquina},'I','A'
+	</insert>
+
+	<select id="facturaSOlPago" resultType="Long">
+		SELECT ID_SOLPAGO 
+		FROM medilab_pasiste.dbo.PA_MV_FACTURA
+		WHERE ID_CUENTA = #{idCuenta} AND ID_FACTURA = #{idFactura} AND ESTADO_AUD='A'
+	</select>
+
+	<select id="consultarPago" resultType="Long">
+		SELECT count(*)
+		FROM medilab_pasiste.dbo.PA_MV_PAGO
+		WHERE ID_CUENTA = #{idCuenta} AND ID_FACTURA = #{idFactura} AND NRO_OP_SISE > 0 AND ESTADO_AUD='A'
+	</select>
+
+	<update id="actualizarFactura">
+		UPDATE medilab_pasiste.dbo.PA_MV_FACTURA
+		SET ID_TIPO_DOC_EMPRESA =#{IdTipoDocEmpresa},ID_EMPRESA=#{IdEmpresa},ID_TIPO_DOC =#{IdTipoDoc},ID_PERSONA=#{IdPersona},
+			ID_DX=#{IdDX},NOMBRE_DX=#{NombreDX},ID_FURAT_FUREP=#{IdFuratFurep},FECHA_ATEP=#{FechaAtep},TIPO_SINIESTRO=#{TipoSiniestro},
+			VALOR_NETO=#{ValorNeto},VALOR_BRUTO=#{ValorBruto},NUMERO_AUTORIZACION=#{NumeroAutorizacion},FECHA_ESTADO=getdate(),
+			NOTA_CREDITO=#{NotaCredito},FECHA_MODIFICACION_AUD=getdate(),USUARIO_AUD=#{ps_usuario},MAQUINA_AUD=#{ps_maquina},OPERACION_AUD='A',
+			ESTADO_AUD='A',FACTURA=#{Factura},FECHA_FACTURA=#{FechaFactura},ID_SECCIONAL=#{IdSeccional},VALOR_IVA=#{ValorIVA},ID_PROVEEDOR=#{IdProveedor},
+			ID_TIPO_DOC_PROV=#{IdTipoDocProv},PREFIJO_FACTURA=#{PrefijoFactura},FECHA_SERVICIO=#{FechaServicio},FECHA_AUTORIZACION=#{FechaAutorizacion},
+			ID_SUCURSAL=#{IdSucursal},IND_PPARCIAL=0,IND_PPORCENTAJE=0,ID_TIPO_SOL=#{IdTipoSOl},COD_STIKKER=#{CodSTIKKER},IND_VRCERTIFICADO=#{indVlrCertificado},
+			FECHA_RADICACION=#{FechaRadicacion},ID_AUDITOR_CONCURRENTE=#{IdAuditorConcurrente},ID_RADICADOR=#{IdRadicador},ID_SOLPAGO=0,ID_DEPARTAMENTO =#{IdDepartamento},
+			ID_MUNICIPIO=#{IdMunicipio},AUD_CONCURRENTE=#{AudConcurrente},COD_SUCURSAL=#{l_codsise}, IND_ESTADO_FACTURA = #{IndEstadoFactura}, COD_SAP = #{codSAP}, RECON_RESERVA= #{reconReserva}
+		WHERE ID_CUENTA=#{idCuenta} AND ID_FACTURA= #{idFactura} AND ESTADO_AUD='A'
+	</update>
+
+	<select id="getFacturaById" resultType="com.gci.siarp.cuentasMedicas.domain.Factura">
+		SELECT 
+	 	ID_CUENTA idCuenta,ID_FACTURA idFactura,ID_TIPO_DOC_EMPRESA	idTipoDocEmpresa,ID_EMPRESA	idEmpresa,DV_EMPRESA dvEmpresa,ID_TIPO_DOC idTipoDoc,ID_PERSONA idPersona,
+		 ID_DX idDX,	NOMBRE_DX nombreDX,	ID_FURAT_FUREP idFuratFurep,FECHA_ATEP fechaAtep,TIPO_SINIESTRO tipoSiniestro,valor_neto valorNeto,	valor_bruto valorBruto,	NUMERO_AUTORIZACION numeroAutorizacion,
+		 IND_RECOBRO indRecobro,	IND_REINGRESO indReingreso,	IND_ESTADO_FACTURA indEstadoFactura,FECHA_ESTADO fechaEstado, DESCRIPCION_GLOSA descripcionGlosa, ORIGEN_GLOSA origenGlosa, valor_glosa valorGlosa,
+		 CASE WHEN NOTA_CREDITO =NULL THEN 0 ELSE NOTA_CREDITO END  notaCredito, NOTA_DEBITO notaDebito, FECHA_MODIFICACION_AUD fechaModificacionAUD,USUARIO_AUD	usuarioAUD,	MAQUINA_AUD maquinaAUD,
+		 OPERACION_AUD operacionAUD, ESTADO_AUD estadoAUD,FACTURA factura,FECHA_FACTURA fechaFactura,OBSERVACION	observacion,ID_SECCIONAL idSeccional, COMENT_RECOBRO comentRecobro,	COMENT_NEGACION comentNegacion,
+		 COMENT_ORIGEN comentOrigen,	VALOR_IVA valorIVA,	CAUSA_RECOBRO causaRecobro,	ID_TIPO_SOL idTipoSOl,ID_TIPO_DOC_PROV idTipoDocProv,ID_PROVEEDOR idProveedor,PREFIJO_FACTURA prefijoFactura,
+		 FECHA_SERVICIO fechaServicio,FECHA_AUTORIZACION fechaAutorizacion,ID_SUCURSAL idSucursal,TIPO_INCONSISTENCIA tipoInconsistencia,RECON_RESERVA reconReserva,ID_GLOSA idGLosa,ID_GENERADA idGenerada,
+		 ID_AUDITORIA idAuditoria,ID_ENVIO idEnvio,ID_SOLPAGO idSolPago,ID_PROFESIONAL idProfesional,IND_PPARCIAL indPparcial,IND_PPORCENTAJE indPporcentaje,FECHA_GENERADA fechaGenerada,
+		 FECHA_AUDITORIA fechaAuditoria,	IND_VRCERTIFICADO indVRCertificado,	FECHA_ENVIO fechaEnvio,	FECHA_SOLPAGO fechaSolpago,	ID_SIARP idSIARP,COD_STIKKER codSTIKKER,RETORNO_SISE retornoSISE,
+		 ID_SOLPAGO_ANT idSolpagoANT,IND_CAUSA_OK indCausaOK,ID_SIARP_NC idSIARPNC,RETORNO_SISE_NC retornoSISENC,ID_SOLNC idSolNC,ID_DEPARTAMENTO idDepartamento,ID_MUNICIPIO idMunicipio,
+		 AUD_CONCURRENTE audConcurrente,	ID_RADICADOR idRadicador,ID_AUDITOR_CONCURRENTE idAuditorConcurrente,FECHA_RADICACION fechaRadicacion, COD_SUCURSAL codSucursal, ID_PROCESO idProceso,
+		 COD_SAP codSAP
+		FROM medilab_pasiste.dbo.PA_MV_FACTURA 
+		WHERE ID_CUENTA = #{idCuenta} AND ID_FACTURA = #{idFactura} AND ESTADO_AUD='A'
+		<if test="factura != null">
+				AND FACTURA = #{factura}
+			</if>
+	</select>
+
+	<select id="buscarRubros" resultType="com.gci.siarp.cuentasMedicas.domain.Rubro">
+		SELECT ID_CUENTA idCuenta,ID_FACTURA idFactura, CONSECUTIVO, ID_RUBRO idRubro,NOMBRE_RUBRO nombreRubro,VALOR_RUBRO valorRubro,VALOR_IVA valorIva,
+		 ID_GLOSA idGlosa, NOMBRE_GLOSA nombreGlosa, VALOR_GLOSA valorGlosa,VALOR_NC valorNC, OBSERVACION observacion,FECHA_MODIFICACION_AUD fechaModificacionAud, USUARIO_AUD
+		 usuarioAud, MAQUINA_AUD maquinaAud, OPERACION_AUD operacionAud, ESTADO_AUD estadoAud 
+		FROM medilab_pasiste.dbo.PA_MV_RUBRO 
+		WHERE ID_CUENTA = #{idCuenta} AND ID_FACTURA =#{idFactura} AND ESTADO_AUD='A'
+	</select>
+
+	<select id="existeGlosa" resultType="Integer">
+		SELECT count (*)
+		FROM medilab_pasiste.dbo.PA_MV_GLOSA 
+		WHERE ID_CUENTA = #{idCuenta} AND ID_FACTURA = #{idFactura} and VALOR_GLOSA >0 AND ESTADO_AUD='A'
+	</select>
+
+	<update id="actualizarRubro">
+		UPDATE medilab_pasiste.dbo.PA_MV_RUBRO
+		SET ID_GLOSA = 	#{idGlosa},
+		    NOMBRE_GLOSA=#{nombreGlosa},
+		    VALOR_GLOSA=#{valorGlosa},
+		    FECHA_MODIFICACION_AUD= #{ps_fecha},
+		    USUARIO_AUD=#{ps_usuario},
+		    MAQUINA_AUD=#{ps_maquina}, OPERACION_AUD='I'
+		WHERE ID_CUENTA =#{idCuenta} AND ID_FACTURA =#{idFactura} and ID_RUBRO =#{idRubro} AND ESTADO_AUD='A'
+	</update>
+
+	<select id="nombreGlosa" resultType="String">
+		SELECT NOMBRE_GLOSA
+		FROM medilab_pasiste.dbo.PA_PM_TIPO_GLOSA 
+		WHERE ID_GLOSA = #{tipoGlosa} AND ESTADO_AUD='A'
+	</select>
+
+	<insert id="insertarGlosa">
+		INSERT INTO medilab_pasiste.dbo.PA_MV_GLOSA(ID_CUENTA, ID_FACTURA, CONSECUTIVO,ID_GLOSA,ID_RUBRO,FECHA_GLOSA,VALOR_GLOSA, OBSERVACION,FECHA_MODIFICACION_AUD,USUARIO_AUD, MAQUINA_AUD, OPERACION_AUD,
+								ESTADO_AUD, ESTADO, TIPO_RESPUESTA, FECHA_RESPUESTA, VALOR_SUSTENTADO, ESTADO_GLOSA, IVA )
+		VALUES (#{idCuenta},#{idFactura},#{consecutivo},#{idGlosa},#{idRubro},getdate(),#{valorGlosa},#{nombreGlosa},#{ps_fecha},#{ps_usuario},#{ps_maquina},'I','A' ,#{estado},
+				#{tipoRespuesta}, #{fecha_respuesta}, #{valorSustentado}, #{estadoAuditoria}, #{valor_iva})
+	</insert>
+
+	<select id="obtenerSaldoSustentacion" resultType="Double">
+		SELECT SUM(VALOR_GLOSA)- SUM(VALOR_SUSTENTADO) saldo
+		FROM medilab_pasiste.dbo.PA_MV_GLOSA 
+		WHERE ID_CUENTA = #{idCuenta} AND ID_FACTURA = #{idFactura} AND ESTADO_AUD='A'
+	</select>
+	
+	<select id="obtenerValorPendiente" resultType="Double">
+		select (f.valor_neto - f.NOTA_CREDITO) - ((f.valor_neto - f.NOTA_CREDITO) - sum(g.VALOR_GLOSA) +  sum(g.VALOR_SUSTENTADO)) from medilab_pasiste..PA_MV_FACTURA f 
+			inner join medilab_pasiste..PA_MV_GLOSA g on f.ID_CUENTA = g.ID_CUENTA and f.ID_FACTURA = g.ID_FACTURA 
+			where f.ID_CUENTA = #{idCuenta}
+			and f.ID_FACTURA = #{idFactura}
+			group by f.ID_CUENTA,f.ID_FACTURA
+	</select>
+
+	<select id="consultarCambioEstado" resultType="String">
+		SELECT case when Sum(VALOR_GLOSA) = (case when sum(VALOR_SUSTENTADO) =null then 0 else Sum(VALOR_SUSTENTADO) end) 
+			   then 'AC' else case when Sum(VALOR_GLOSA) > (case when sum(VALOR_SUSTENTADO) =null then 0 else Sum(VALOR_SUSTENTADO) end) then 'GP' else 'ERROR' end end 
+ 		FROM medilab_pasiste.dbo.PA_MV_GLOSA 
+ 		WHERE ID_CUENTA = #{idCuenta} AND ID_FACTURA = #{idFactura} AND ESTADO_AUD='A'
+	</select>
+
+	<update id="actualizarEstadoFactura">
+		UPDATE medilab_pasiste.dbo.PA_MV_FACTURA
+		SET IND_ESTADO_FACTURA = #{estado},
+		    IND_VRCERTIFICADO = -1,
+		    valor_glosa =#{valorGlosa}
+		WHERE ID_CUENTA = #{idCuenta} AND ID_FACTURA = #{idFactura} AND ESTADO_AUD='A'
+	</update>
+
+	<select id="valorRubroComision" resultType="String">
+		SELECT ID_RUBRO
+		FROM medilab_pasiste.dbo.PA_PM_RUBROS
+		where COMISION = 1 and ESTADO_AUD = 'A'
+	</select>
+
+	<select id="maxConsecutivoGlosa" resultType="Integer">
+		SELECT case when MAX(CONSECUTIVO) =null then 0 else MAX(CONSECUTIVO) end
+		FROM medilab_pasiste.dbo.PA_MV_GLOSA 
+		WHERE ID_CUENTA = #{idCuenta} AND ID_FACTURA = #{idFactura}
+	</select>
+
+	<!-- <select id="consultarGlosa" resultType="com.gci.siarp.factura.domain.Glosa"> 
+		SELECT ID_CUENTA, ID_FACTURA, CONSECUTIVO, ID_GLOSA, ID_RUBRO, FECHA_GLOSA, 
+		VALOR_GLOSA, OBSERVACION, ESTADO, TIPO_GLOSA, TIPO_RESPUESTA, FECHA_RESPUESTA, 
+		VALOR_SUSTENTADO, OBSERVACION_RESPUESTA, FECHA_MODIFICACION_AUD, USUARIO_AUD, 
+		MAQUINA_AUD, OPERACION_AUD, ESTADO_AUD, ID_SIARP, ID_SOLGLOSA, RETORNO_SISE, 
+		ID_SIARP_LEV, ID_SOLGLOSA_LEV, RETORNO_SISE_LEV, IND_PROCESO FROM medilab_pasiste.dbo.PA_MV_GLOSA 
+		WHERE ID_GLOSA = #{idGlosa}; </select> -->
+
+	<select id="registrosPago" resultType="Long">
+		SELECT count(*)
+		FROM medilab_pasiste.dbo.PA_MV_PAGO
+		WHERE ID_CUENTA = #{idCuenta} and ID_FACTURA = #{idFactura}
+	</select>
+
+	<select id="sumGlosa" resultType="Double">
+		SELECT SUM(VALOR_GLOSA)
+		FROM medilab_pasiste.dbo.PA_MV_GLOSA
+		WHERE ID_CUENTA = #{idCuenta} AND ID_FACTURA = #{idFactura} AND ID_RUBRO = #{idRubro} AND ESTADO_AUD = 'A'
+	</select>
+
+	<select id="sumSustentado" resultType="Double">
+		SELECT 	SUM(VALOR_SUSTENTADO)
+		FROM medilab_pasiste.dbo.PA_MV_GLOSA
+		WHERE ID_CUENTA = #{idCuenta} AND ID_FACTURA = #{idFactura} AND ID_RUBRO = #{idRubro} AND ESTADO_AUD = 'A'
+	</select>
+
+	<select id="sumVRpagado" resultType="Double">
+		SELECT SUM(VALOR_PAGO)
+		FROM medilab_pasiste.dbo.PA_MV_PAGO
+		WHERE ID_CUENTA = #{idCuenta} AND ID_FACTURA = #{idFactura} AND ID_RUBRO = #{idRubro} AND ESTADO_AUD ='A'
+	</select>
+
+	<insert id="insertarPago">
+		INSERT INTO medilab_pasiste.dbo.PA_MV_PAGO(ID_CUENTA,ID_FACTURA,ID_PAGO,VALOR_PAGO,FECHA_MODIFICACION_AUD,USUARIO_AUD,MAQUINA_AUD ,OPERACION_AUD ,ESTADO_AUD,RECON_RESERVA,
+					ID_RUBRO)
+		VALUES(#{idCuenta},#{idFactura},#{consecutivoP},#{vrPagar},getdate(),#{usuarioAUD},#{maquinaAUD},#{operacionAUD},'A','N',#{idRubro})
+	</insert>
+
+	<select id="buscarFacturas" resultType="com.gci.siarp.cuentasMedicas.domain.Factura" timeout="5">
+		SELECT TOP 5000 PA_MV_FACTURA.ID_CUENTA idCuenta, PA_MV_FACTURA.ID_FACTURA idFactura, 
+		CASE when IND_ESTADO_FACTURA ='AC' then 'Aceptada' else	
+			CASE when IND_ESTADO_FACTURA ='DE' then 'Devuelta' else
+				CASE when IND_ESTADO_FACTURA ='IS' then 'Incompleta sin auditoria' else
+						CASE when IND_ESTADO_FACTURA ='IC' then 'Incompleta con auditoria' else
+							CASE when IND_ESTADO_FACTURA ='CS' then 'Completa sin auditoria' else
+									CASE when IND_ESTADO_FACTURA ='CC' then 'Completa con auditoria' else
+										CASE when IND_ESTADO_FACTURA ='GP' then 'Glosada' else
+											CASE when IND_ESTADO_FACTURA ='GT' then 'Generada Total' else
+			IND_ESTADO_FACTURA end end end end end end end end indEstadoFactura,
+			PA_MV_FACTURA.FACTURA factura, PA_MV_FACTURA.FECHA_RADICACION fechaRadicacion, PA_MV_FACTURA.ID_SIARP idSIARP, 
+			PA_MV_FACTURA.ID_PROVEEDOR idProveedor, PA_MV_FACTURA.valor_neto valorNeto,  case when ID_SOLPAGO=null then 0 else ID_SOLPAGO end idSolPago, PA_MV_FACTURA.RECON_RESERVA reconReserva, PA_MV_FACTURA.ID_FURAT_FUREP idFuratFurep, PA_MV_FACTURA.valor_bruto valorBruto
+			
+
+	
+		<!--PA_MV_FACTURA.ID_TIPO_DOC_EMPRESA idTipoDocEmpresa, PA_MV_FACTURA.ID_EMPRESA idEmpresa, PA_MV_FACTURA.DV_EMPRESA dvEmpresa,	ID_TIPO_DOC idTipoDoc, PA_MV_FACTURA.ID_PERSONA idPersona, PA_MV_FACTURA.ID_DX idDX,
+		 NOMBRE_DX nombreDX,	ID_FURAT_FUREP idFuratFurep, PA_MV_FACTURA.FECHA_ATEP fechaAtep, PA_MV_FACTURA.TIPO_SINIESTRO tipoSiniestro, valor_bruto valorBruto, PA_MV_FACTURA.NUMERO_AUTORIZACION numeroAutorizacion, PA_MV_FACTURA.
+		 IND_RECOBRO indRecobro, PA_MV_FACTURA.IND_REINGRESO indReingreso,  PA_MV_FACTURA.FECHA_ESTADO fechaEstado, PA_MV_FACTURA.DESCRIPCION_GLOSA descripcionGlosa, PA_MV_FACTURA.ORIGEN_GLOSA origenGlosa, PA_MV_FACTURA.
+		 valor_glosa valorGlosa, PA_MV_FACTURA.NOTA_CREDITO notaCredito, PA_MV_FACTURA.NOTA_DEBITO notaDebito, PA_MV_FACTURA.FECHA_MODIFICACION_AUD fechaModificacionAUD, PA_MV_FACTURA.USUARIO_AUD usuarioAUD,	 PA_MV_FACTURA.MAQUINA_AUD maquinaAUD, PA_MV_FACTURA.OPERACION_AUD operacionAUD,  PA_MV_FACTURA.ESTADO_AUD estadoAUD, PA_MV_FACTURA.FECHA_FACTURA fechaFactura,	 PA_MV_FACTURA.OBSERVACION observacion, PA_MV_FACTURA.ID_SECCIONAL idSeccional, PA_MV_FACTURA.COMENT_RECOBRO comentRecobro, PA_MV_FACTURA.COMENT_NEGACION comentNegacion,
+		 COMENT_ORIGEN comentOrigen, PA_MV_FACTURA.VALOR_IVA valorIVA, PA_MV_FACTURA.CAUSA_RECOBRO causaRecobro, PA_MV_FACTURA.ID_TIPO_SOL idTipoSOl, PA_MV_FACTURA.ID_TIPO_DOC_PROV idTipoDocProv,  PA_MV_FACTURA.PREFIJO_FACTURA prefijoFactura,
+		 FECHA_SERVICIO fechaServicio,FECHA_AUTORIZACION fechaAutorizacion, PA_MV_FACTURA.ID_SUCURSAL idSucursal,TIPO_INCONSISTENCIA tipoInconsistencia, PA_MV_FACTURA.RECON_RESERVA reconReserva,ID_GLOSA idGLosa,
+		 ID_GENERADA idGenerada, PA_MV_FACTURA.ID_AUDITORIA idAuditoria,  PA_MV_FACTURA.ID_ENVIO idEnvio,
+		 PA_MV_FACTURA.ID_PROFESIONAL idProfesional,IND_PPARCIAL indPparcial, PA_MV_FACTURA.IND_PPORCENTAJE indPporcentaje,
+		 FECHA_GENERADA fechaGenerada, PA_MV_FACTURA.FECHA_AUDITORIA fechaAuditoria,IND_VRCERTIFICADO indVRCertificado, PA_MV_FACTURA.FECHA_ENVIO fechaEnvio,  PA_MV_FACTURA.FECHA_SOLPAGO fechaSolpago,  PA_MV_FACTURA.COD_STIKKER codSTIKKER,   PA_MV_FACTURA.ID_SOLPAGO_ANT idSolpagoANT, PA_MV_FACTURA.IND_CAUSA_OK indCausaOK,ID_SIARP_NC idSIARPNC, ID_SOLNC idSolNC,ID_DEPARTAMENTO idDepartamento,
+		 ID_MUNICIPIO idMunicipio, PA_MV_FACTURA.AUD_CONCURRENTE audConcurrente, PA_MV_FACTURA.ID_RADICADOR idRadicador,ID_AUDITOR_CONCURRENTE idAuditorConcurrente, PA_MV_FACTURA.COD_SUCURSAL codSucursal,
+		 ID_PROCESO idProceso, PA_MV_FACTURA.COD_SAP codSAP 	
+			 -->
+		FROM medilab_pasiste.dbo.PA_MV_FACTURA PA_MV_FACTURA
+		<where>
+			<if test="idCuenta != null">
+				AND ID_CUENTA = #{idCuenta}
+			</if>
+			<if test="factura != null">
+				AND FACTURA = #{factura}
+			</if>
+			<if test="prefFactura != null">
+				AND PREFIJO_FACTURA = #{prefFactura}
+			</if>
+			<if test="idSiarp != null">
+				AND ID_SIARP = #{idSiarp}
+			</if>
+			<if test="indEstadoFactura != null">
+				AND IND_ESTADO_FACTURA = #{indEstadoFactura}
+			</if>
+			<if test="idSeccional != null">
+				AND ID_SECCIONAL = #{idSeccional}
+			</if>
+			<if test="docProv != null and idProv !=null">
+				AND ID_TIPO_DOC_PROV = #{docProv}
+				AND ID_PROVEEDOR =
+				#{idProv}
+			</if>
+			<if test="tipoDocEmpresa != null and idEmpresa !=null">
+				AND ID_EMPRESA =#{idEmpresa}
+				AND ID_TIPO_DOC_EMPRESA =
+				#{tipoDocEmpresa}
+			</if>
+			<if test="fechaInicial != null and fechaFinal != null">
+				AND FECHA_RADICACION between #{fechaInicial} AND
+				#{fechaFinal}
+			</if>
+			AND ESTADO_AUD='A'
+		</where>
+	</select>
+
+	<select id="listaGlosasByFactura" resultType="com.gci.siarp.cuentasMedicas.domain.Glosa">
+		SELECT ID_CUENTA idCuenta, ID_FACTURA idFactura, CONSECUTIVO consecutivo, ID_GLOSA idGlosa, ID_RUBRO idRubro, FECHA_GLOSA fechaGlosa, VALOR_GLOSA valorGlosa, OBSERVACION observacion,
+		 ESTADO estado, TIPO_GLOSA tipoGlosa, TIPO_RESPUESTA tipoRespuesta, FECHA_RESPUESTA fechaRespuesta, VALOR_SUSTENTADO valorSustentado, OBSERVACION_RESPUESTA observacionRespuesta,
+		 FECHA_MODIFICACION_AUD fechaModificacionAud, USUARIO_AUD usuarioAud, MAQUINA_AUD maquinaAud, OPERACION_AUD operacionAud, ESTADO_AUD estadoAud, ID_SIARP idSiarp, ID_SOLGLOSA idSolglosa,
+		 RETORNO_SISE retornoSISE, ID_SIARP_LEV idSiarpLev, ID_SOLGLOSA_LEV idSolglosaLev, RETORNO_SISE_LEV	retornoSISELev, IND_PROCESO indProceso
+		FROM medilab_pasiste.dbo.PA_MV_GLOSA 
+		WHERE ID_CUENTA = #{idCuenta} AND ID_FACTURA = #{idFactura} AND ESTADO_AUD = 'A'
+	</select>
+
+	<select id="listaReservasByFactura" resultType="com.gci.siarp.cuentasMedicas.domain.ReservaMov">
+		SELECT res_mv_reserva_soa.nro_mov, res_mv_reserva_soa.id_tipomov, res_mv_reserva_soa.fecha_movimiento, 
+			res_mv_reserva_soa.reserva_asistencial, res_mv_reserva_soa.usuario_aud 
+		FROM 	pecono_reservas.dbo.RES_MV_FACTURAS RES_MV_FACTURAS 
+		INNER JOIN pecono_reservas.dbo.res_mv_reserva_soa res_mv_reserva_soa 
+			ON RES_MV_FACTURAS.ID_SINIESTRO = res_mv_reserva_soa.id_furat_temp AND RES_MV_FACTURAS.NRO_MOV = res_mv_reserva_soa.nro_mov 
+		WHERE  (RES_MV_FACTURAS.ID_CUENTA = #{idCuenta}) AND (RES_MV_FACTURAS.ID_FACTURA = #{idFactura} AND res_mv_reserva_soa.estado_aud='A')
+	</select>
+	
+	<select id="listaPagosByFactura" resultType="com.gci.siarp.cuentasMedicas.domain.Pago">
+		SELECT ID_CUENTA idCuenta, ID_FACTURA idFactura,ID_PAGO idPago, ID_RUBRO idRubro,FECHA_PAGO fechaPago,VALOR_PAGO valorPago,	VALOR_IVA valorIva,	OBSERVACION observacion,
+		 FECHA_MODIFICACION_AUD fechaModificacionAUD,USUARIO_AUD usuarioAUD,	MAQUINA_AUD maquinaAUD,	OPERACION_AUD operacionAUD,	ESTADO_AUD estadoAUD,FECHA_ENVIO fechaEnvio,
+		 FECHA_SOLPAGO fechaSolPago, ID_ENVIO idEnvio,ESTADO estado,TIPO_PAGO tipoPago,ID_PAGO_SISE idPagoSISE,RECON_RESERVA ReconReserva,VALOR_PAGO_SISE valorPagoSISE,
+		 NRO_OP_SISE_ANT NROOPSISEANT,RETORNO_SISE retornoSISE,NRO_OP_SISE NROOPSISE,IND_PROCESO INDProceso,IND_RESERVA INDReserva,FECHA_CALCULO fechaCalculo,ID_SIARP idSiarp,
+		 COD_ERROR codError,  NRO_OP_SAP NROOPSAP,RETORNO_SAP retornoSAP, FECHA_PROCESADO fechaProcesado
+		FROM medilab_pasiste.dbo.PA_MV_PAGO
+		WHERE ID_CUENTA = #{idCuenta} AND ID_FACTURA = #{idFactura} AND ESTADO_AUD='A'
+	</select>
+
+	<select id="consultarProveedor" resultType="com.gci.siarp.cuentasMedicas.domain.Proveedor">
+		SELECT ID_TIPO_DOC idTipoDoc, ID_PROVEEDOR idProveedor, ID_DEPARTAMENTO idDepartamento, ID_MUNICIPIO idMunicipio, ID_TIPO_SOL idTipoSol, DV_EMPRESA dvEmpresa,
+		 RAZON_SOCIAL razonSocial, DIRECCION_PROVEEDOR direccionProveedor,TELEFONO_PROVEEDOR telefonoProveedor, FAX_PROVEEDOR faxProveedor,EMAIL_PROVEEDOR emailProveedor,
+		 IND_ZONA indZona, FECHA_INGRESO fechaIngreso, REPRESENTANTE_LEGAL representanteLegal, TIPO_CUENTA_BANCARIA tipoCuentaBancaria, CUENTA_BANCARIA cuentaBancaria, 
+		 OFICINA_BANCO oficinaBanco, ID_BANCO idBanco, FECHA_MODIFICACION_AUD fechaModificacionAUD, USUARIO_AUD usuarioAUD,MAQUINA_AUD maquinaAUD, OPERACION_AUD operacionAUD, ESTADO_AUD
+		 estadoAUD, tipo_proveedor tipoProveedor, CODIGO_PRESTADOR codigoPrestador, APELLIDO1 apellido1, APELLIDO2 apellido2,PORCENTAJE_PAGO porcentajePago, NOMBRE_SISE nombreSISE, 
+		 APELLIDO1_SISE apellido1SISE, APELLIDO2_SISE apellido2SISE, PRIORIDAD prioridad, SERVICIOS servicios, COD_TIPO_MEDIO_PAGO codTipoMedioPago,	COD_TIPO_DIR codTipoDir, 
+		 COD_TIPO_TELEF codTipoTelef, XML_SISE xmlSISE, XML_RETORNO_SISE xmlRetornoSISE, TERCERO_SISE terceroSISE, ind_calidad indCalidad, IND_ALIADO indAliado, TIPO_PERSONA tipoPersona 
+		FROM medilab_pasiste.dbo.PA_MA_PROVEEDOR 
+		WHERE ID_TIPO_DOC = #{idTipoDoc} AND ID_PROVEEDOR = #{idProveedor} AND ESTADO_AUD ='A'
+	</select>
+
+	<select id="consultarInfoCuenta" resultType="com.gci.siarp.cuentasMedicas.domain.Cuenta">
+		 SELECT ID_CUENTA idCuenta, ID_TIPO_SOL idTipoSol, FECHA_RADICADO fechaRadicado,	ID_TIPO_DOC idTipoDOC, ID_PROVEEDOR idProveedor, DV_EMPRESA dvEmpresa, TIPO_INGRESO_CUENTA tipoIngresoCuenta, ID_SECCIONAL idSeccional,
+		NUMERO_FOLIOS numeroFolios, NUMERO_FACTURAS numeroFacturas, VALOR_CUENTA valorCuenta, ORDEN_PAGO ordenPago, FECHA_OP fechaOP, IND_ESTADO_CUENTA indEstadoCuenta, CDP CDP, FECHA_CDP fechaCDP, RP RP,
+		FECHA_RP fechaRP, FECHA_MODIFICACION_AUD fechaModAud, USUARIO_AUD usuarioAud, MAQUINA_AUD maquinaAud, OPERACION_AUD operacionAud, ESTADO_AUD estadoAud, FECHA_ESTADO fechaEstado, ID_PROFESIONAL
+		idProfesional, IND_REEMBOLSO indReembolso, ID_REEMBOLSO idReembolso, NUMERO_CUENTA numeroCuenta, CODIGO_BANCO codigoBanco, NOMBRE_BANCO nombreBanco, TIPO_CUENTA tipoCuenta,  SUCURSAL_BANCARIA sucursalBancaria
+		FROM medilab_pasiste.dbo.PA_MA_CUENTA 
+		WHERE ID_CUENTA = #{idCuenta} AND ESTADO_AUD ='A'
+	</select>
+
+	<select id="nombreTipoSolProveedor" resultType="String">
+		SELECT DESCRIPCION_SOLICITANTE 
+		FROM medilab_pasiste.dbo.ML_PM_SOLICITANTES
+		WHERE TIPO_SOLICITANTE = #{idTipoSol} AND ESTADO_AUD ='A'
+	</select>
+
+	<select id="consultarListadoRubros" resultType="com.gci.siarp.cuentasMedicas.domain.PA_PM_Rubros">
+		SELECT ID_RUBRO idRubro, ID_RUBRO +' - '+ DESCRIPCION descripcion, COMISION comision, CREDITO_SAP creditoSAP
+		FROM medilab_pasiste.dbo.PA_PM_RUBROS 
+		WHERE ESTADO_AUD ='A'
+	</select>
+
+	<select id="consultarSiniestros" resultType="com.gci.siarp.generales.domain.Siniestro">
+		SELECT 	SI.ID_SINIESTRO AS idSiniestro,SI.FECHA_AT AS fechaAT,SI.RAZON_SOCIAL AS origen,SI.ID_TIPO_DOC_EMP AS tDocEmpre,SI.ID_EMPRESA AS docEmpre ,
+		 (SELECT case WHEN ( select ID_SINIESTRO FROM siniestros_socupa.dbo.ATEP_MA_FURAT where ID_SINIESTRO = SI.ID_SINIESTRO)!= null THEN 'AT' ELSE Case WHEN ( select ID_SINIESTRO
+			FROM siniestros_socupa.dbo.ATEP_MA_FUREP where ID_SINIESTRO = SI.ID_SINIESTRO)!= null THEN 'EP' ELSE 'SF'  END 	END) AS tipo
+		FROM siniestros_socupa.dbo.ATEP_MA_SINIESTRO SI
+		WHERE (SI.ID_TIPO_DOC = #{idTipoDoc}) AND (SI.ID_PERSONA = #{idPersona})
+	</select>
+
+	<update id="actualizarRubroInterface">
+		UPDATE medilab_pasiste.dbo.PA_MV_RUBRO
+		SET ID_RUBRO = #{idRubro},
+			NOMBRE_RUBRO = #{nombreRubro}
+		WHERE ID_CUENTA = #{idCuenta} AND ID_FACTURA = #{idFactura} AND CONSECUTIVO = #{consecutivo}
+	</update>
+
+	<select id="consultarNombreRubroInterface" resultType="String">
+		SELECT DESCRIPCION
+		FROM medilab_pasiste.dbo.PA_PM_RUBROS
+		WHERE ID_RUBRO = #{idRubro} AND ESTADO_AUD ='A'
+	</select>
+
+	<select id="consultarProvEnbargado" resultType="Integer">
+		SELECT COUNT(*)
+		FROM medilab_pasiste.dbo.PA_MV_EMBARGO_PROV
+		WHERE ID_TIPO_DOC = #{idTipoDoc} AND ID_PROVEEDOR = #{idProveedor} AND IND_EMBARGO=1 AND ESTADO_AUD='A'
+	</select>
+
+	<select id="detalleEmbargo" resultType="com.gci.siarp.cuentasMedicas.domain.InfoEmbargo">
+		SELECT	PA_MV_EMBARGO_PROV.ID_TIPO_DOC AS idTipoDoc,
+				PA_MV_EMBARGO_PROV.ID_PROVEEDOR AS idProveedor,
+				PA_MV_EMBARGO_PROV.ID_EMBARGO AS idEmbargo,
+				PA_MV_EMBARGO_PROV.NUMERO_PROCESO AS numeroProceso,
+		 		PA_PM_JUZGADO.ID_JUZGADO AS idJuzgado,
+		 		PA_PM_JUZGADO.JUZGADO AS juzgado,
+		 		PA_PM_JUZGADO.ASUNTO AS asunto,
+		 		PA_PM_JUZGADO.CLASE AS clase, 
+		 		'JUZGADO ' + CONVERT (VARCHAR (2), PA_PM_JUZGADO.JUZGADO) + ' - ' + (CASE PA_PM_JUZGADO.ASUNTO 
+		 			WHEN 'P' THEN 'PENAL ' 
+		 			WHEN 'C' THEN 'CIVIL ' 
+		 			WHEN 'U' THEN 'MUNICIPAL DE PEQUEÑAS CAUSAS LABORALES ' 
+		 			WHEN 'L' THEN 'LABORAL ' 
+		 			WHEN 'M' THEN 'MUNICIPAL ' 
+		 			WHEN 'I' THEN 'CIVIL MUNICIPAL '
+		 			ELSE '' 
+		 		END) + (CASE PA_PM_JUZGADO.CLASE 
+		 			WHEN 'C' THEN 'DEL CIRCUITO' 
+		 			WHEN 'A' THEN 'ADJUNTO'
+		 			ELSE '' 
+		 		END) + ' DE ' + GRAL_PM_DEPARTAMENTO.NOMBRE_DEPARTAMENTO + ' - ' + GRAL_PM_MUNICIPIO.NOMBRE_MUNICIPIO AS Descripcion 
+		FROM  
+		 ((medilab_pasiste.dbo.PA_MV_EMBARGO_PROV PA_MV_EMBARGO_PROV 
+		 INNER JOIN medilab_pasiste.dbo.PA_PM_JUZGADO PA_PM_JUZGADO ON (PA_MV_EMBARGO_PROV.ID_JUZGADO = PA_PM_JUZGADO.ID_JUZGADO))
+		 INNER JOIN siarp.dbo.GRAL_PM_DEPARTAMENTO GRAL_PM_DEPARTAMENTO ON (PA_PM_JUZGADO.ID_DEPARTAMENTO = GRAL_PM_DEPARTAMENTO.ID_DEPARTAMENTO))
+		 	INNER JOIN
+		siarp.dbo.GRAL_PM_MUNICIPIO GRAL_PM_MUNICIPIO ON (PA_PM_JUZGADO.ID_DEPARTAMENTO = GRAL_PM_MUNICIPIO.ID_DEPARTAMENTO) 
+			AND (PA_PM_JUZGADO.ID_MUNICIPIO = GRAL_PM_MUNICIPIO.ID_MUNICIPIO) 
+		WHERE PA_MV_EMBARGO_PROV.ID_TIPO_DOC= #{idTipoDoc} AND PA_MV_EMBARGO_PROV.ID_PROVEEDOR =#{idProveedor}
+	</select>
+	
+	<select id="inforEmbargo" resultType="com.gci.siarp.cuentasMedicas.domain.InfoEmbargo">
+	 SELECT top 1 PA_MV_EMBARGO_PROV.NUMERO_PROCESO AS numeroProceso,
+        PA_PM_JUZGADO.ID_JUZGADO AS idJuzgado,
+		 		'JUZGADO ' + CONVERT (VARCHAR (2), PA_PM_JUZGADO.JUZGADO) + ' - ' + (CASE PA_PM_JUZGADO.ASUNTO 
+		 			WHEN 'P' THEN 'PENAL ' 
+		 			WHEN 'C' THEN 'CIVIL ' 
+		 			WHEN 'U' THEN 'MUNICIPAL DE PEQUEÑAS CAUSAS LABORALES ' 
+		 			WHEN 'L' THEN 'LABORAL ' 
+		 			WHEN 'M' THEN 'MUNICIPAL ' 
+		 			WHEN 'I' THEN 'CIVIL MUNICIPAL '
+		 			ELSE '' 
+		 		END) + (CASE PA_PM_JUZGADO.CLASE 
+		 			WHEN 'C' THEN 'DEL CIRCUITO' 
+		 			WHEN 'A' THEN 'ADJUNTO'
+		 			ELSE '' 
+		 		END) + ' DE ' + GRAL_PM_DEPARTAMENTO.NOMBRE_DEPARTAMENTO + ' - ' + GRAL_PM_MUNICIPIO.NOMBRE_MUNICIPIO AS Descripcion 
+		FROM  
+		 ((medilab_pasiste.dbo.PA_MV_EMBARGO_PROV PA_MV_EMBARGO_PROV 
+		 INNER JOIN medilab_pasiste.dbo.PA_PM_JUZGADO PA_PM_JUZGADO ON (PA_MV_EMBARGO_PROV.ID_JUZGADO = PA_PM_JUZGADO.ID_JUZGADO))
+		 INNER JOIN siarp.dbo.GRAL_PM_DEPARTAMENTO GRAL_PM_DEPARTAMENTO ON (PA_PM_JUZGADO.ID_DEPARTAMENTO = GRAL_PM_DEPARTAMENTO.ID_DEPARTAMENTO))
+		 	INNER JOIN
+		siarp.dbo.GRAL_PM_MUNICIPIO GRAL_PM_MUNICIPIO ON (PA_PM_JUZGADO.ID_DEPARTAMENTO = GRAL_PM_MUNICIPIO.ID_DEPARTAMENTO) 
+			AND (PA_PM_JUZGADO.ID_MUNICIPIO = GRAL_PM_MUNICIPIO.ID_MUNICIPIO)
+		WHERE PA_MV_EMBARGO_PROV.ID_TIPO_DOC = #{idTipoDoc} AND PA_MV_EMBARGO_PROV.ID_PROVEEDOR = #{idProveedor} AND PA_MV_EMBARGO_PROV.IND_EMBARGO=1 AND PA_MV_EMBARGO_PROV.ESTADO_AUD='A'
+	</select>
+	
+
+	<update id="devolverCuenta">
+		UPDATE medilab_pasiste.dbo.PA_MV_FACTURA
+		SET  IND_ESTADO_FACTURA = 'DE',
+			 DESCRIPCION_GLOSA = #{observacion},
+			 ID_GLOSA=#{codigoGlosa}
+		WHERE ID_CUENTA = #{idCuenta}
+	</update>
+
+	<select id="consultarPagoBycuenta" resultType="Long">
+		SELECT count(*)
+		FROM medilab_pasiste.dbo.PA_MV_PAGO
+		WHERE ID_CUENTA = #{idCuenta} and NRO_OP_SISE > 0 AND ESTADO_AUD='A'
+	</select>
+
+	<select id="consultarNombreDiagnostico" resultType="String">
+		SELECT NOMBRE_DX
+		FROM siarp.dbo.GRAL_PM_DIAGNOSTICO 
+		WHERE ID_DX =#{idDX} AND ESTADO_AUD = 'A'
+	</select>
+
+	<update id="inactivarRubro">
+		UPDATE medilab_pasiste.dbo.PA_MV_RUBRO
+		SET ESTADO_AUD = 'I'
+		WHERE ID_CUENTA = #{idCuenta} AND ID_FACTURA =#{idFactura}
+	</update>
+
+	<update id="inactivarAuditoria">
+		UPDATE medilab_pasiste.dbo.PA_MV_GLOSA
+		SET ESTADO_AUD = 'I'
+		WHERE ID_CUENTA = #{idCuenta} AND ID_FACTURA =#{idFactura}
+	</update>
+
+	<update id="inactivarPago">
+		UPDATE medilab_pasiste.dbo.PA_MV_PAGO
+		SET ESTADO_AUD = 'I'
+		WHERE ID_CUENTA = #{idCuenta} AND ID_FACTURA =#{idFactura}
+	</update>
+
+	<select id="estadoFactura" resultType="String">
+		SELECT IND_ESTADO_FACTURA
+		FROM medilab_pasiste.dbo.PA_MV_FACTURA
+		WHERE ID_CUENTA = #{idCuenta} and ID_FACTURA =#{idFactura} AND ESTADO_AUD = 'A'
+	</select>
+
+	<select id="consultarTipoDevolucion" resultType="com.gci.siarp.cuentasMedicas.domain.TipoGlosa">
+		SELECT ID_GLOSA	idGlosa, NOMBRE_GLOSA nombreGlosa, APLICACION aplicacion
+		FROM medilab_pasiste.dbo.PA_PM_TIPO_GLOSA
+		WHERE ID_GLOSA Between 800 and 899 And ESTADO_AUD = 'A'
+	</select>
+
+	<select id="consultarIDSiniestro" resultType="Long">
+		SELECT SI.ID_SINIESTRO 
+		FROM siniestros_socupa.dbo.ATEP_MA_SINIESTRO SI
+		WHERE (SI.ID_TIPO_DOC = #{idTipoDoc}) AND (SI.ID_PERSONA = #{idPersona}) and (SI.FECHA_AT = #{fechaAT}) AND ESTADO_AUD = 'A'
+	</select>
+
+	<select id="consultarFacturasVR" resultType="com.gci.siarp.cuentasMedicas.domain.Factura">
+		SELECT TOP 100 ID_CUENTA idCuenta, ID_FACTURA idFactura,ID_TIPO_DOC_EMPRESA idTipoDocEmpresa,ID_EMPRESA idEmpresa, DV_EMPRESA dvEmpresa,ID_TIPO_DOC idTipoDoc, ID_PERSONA idPersona, ID_DX idDX, NOMBRE_DX
+		 nombreDX,ID_FURAT_FUREP idFuratFurep, FECHA_ATEP fechaAtep,TIPO_SINIESTRO tipoSiniestro, valor_neto valorNeto, valor_bruto valorBruto,NUMERO_AUTORIZACION numeroAutorizacion, IND_RECOBRO indRecobro,
+		 IND_REINGRESO indReingreso, IND_ESTADO_FACTURA indEstadoFactura,FECHA_ESTADO fechaEstado,DESCRIPCION_GLOSA descripcionGlosa, ORIGEN_GLOSA origenGlosa, valor_glosa valorGlosa, 
+		 NOTA_CREDITO notaCredito, NOTA_DEBITO notaDebito, FECHA_MODIFICACION_AUD fechaModificacionAUD, USUARIO_AUD usuarioAUD,
+		 MAQUINA_AUD maquinaAUD, OPERACION_AUD operacionAUD, ESTADO_AUD estadoAUD,FACTURA factura,FECHA_FACTURA fechaFactura,OBSERVACION	observacion,
+		 ID_SECCIONAL idSeccional,COMENT_RECOBRO comentRecobro,COMENT_NEGACION comentNegacion,COMENT_ORIGEN comentOrigen,VALOR_IVA valorIVA,CAUSA_RECOBRO causaRecobro, 
+		 ID_TIPO_SOL idTipoSOl,ID_TIPO_DOC_PROV idTipoDocProv,ID_PROVEEDOR idProveedor,PREFIJO_FACTURA prefijoFactura,FECHA_SERVICIO fechaServicio,FECHA_AUTORIZACION fechaAutorizacion,
+		 ID_SUCURSAL idSucursal,TIPO_INCONSISTENCIA tipoInconsistencia,RECON_RESERVA reconReserva,ID_GLOSA idGLosa,ID_GENERADA idGenerada,ID_AUDITORIA idAuditoria,
+		 ID_ENVIO idEnvio,ID_SOLPAGO idSolPago,ID_PROFESIONAL idProfesional,IND_PPARCIAL indPparcial,IND_PPORCENTAJE indPporcentaje,FECHA_GENERADA fechaGenerada,
+		 FECHA_AUDITORIA fechaAuditoria,IND_VRCERTIFICADO indVRCertificado,FECHA_ENVIO fechaEnvio,FECHA_SOLPAGO fechaSolpago,ID_SIARP idSIARP,COD_STIKKER codSTIKKER,
+		 RETORNO_SISE retornoSISE,ID_SOLPAGO_ANT idSolpagoANT,IND_CAUSA_OK indCausaOK,ID_SIARP_NC idSIARPNC,RETORNO_SISE_NC  retornoSISENC,ID_SOLNC idSolNC,	ID_DEPARTAMENTO idDepartamento,ID_MUNICIPIO
+		 idMunicipio,AUD_CONCURRENTE audConcurrente,ID_RADICADOR idRadicador,ID_AUDITOR_CONCURRENTE idAuditorConcurrente, FECHA_RADICACION fechaRadicacion,COD_SUCURSAL codSucursal,ID_PROCESO idProceso,
+		 COD_SAP codSAP
+		FROM medilab_pasiste.dbo.PA_MV_FACTURA
+		WHERE IND_VRCERTIFICADO = -1 and ESTADO_AUD = 'A'
+		ORDER BY FECHA_FACTURA
+	</select>
+
+	<update id="actualizarFlagVRcertificado">
+		UPDATE medilab_pasiste.dbo.PA_MV_FACTURA
+		SET IND_VRCERTIFICADO = #{vrCertificado}
+		WHERE ID_CUENTA = #{idCuenta}  AND ID_FACTURA =	#{idFactura} AND ESTADO_AUD = 'A'
+	</update>
+
+	<select id="countVrcertificado" resultType="Double">
+		SELECT count(*)
+		FROM medilab_pasiste.dbo.PA_MV_FACTURA
+		WHERE IND_VRCERTIFICADO = -1 AND ESTADO_AUD = 'A'
+	</select>
+	
+	<select id="buscarRubrosSAP" resultType="com.gci.siarp.cuentasMedicas.domain.Rubro">
+	   SELECT PA_MV_RUBRO.ID_CUENTA AS idCuenta,
+       PA_MV_RUBRO.ID_FACTURA AS idFactura,
+       PA_MV_RUBRO.CONSECUTIVO, 
+       PA_MV_RUBRO.ID_RUBRO idRubro,     
+       PA_PM_RUBROS.CREDITO_SAP idRubroSAP,
+       PA_MV_RUBRO.NOMBRE_RUBRO AS nombreRubro,
+       PA_MV_RUBRO.VALOR_RUBRO AS valorRubro,
+       PA_MV_RUBRO.VALOR_IVA AS valorIva,
+       PA_MV_RUBRO.ID_GLOSA AS idGlosa,
+       PA_MV_RUBRO.NOMBRE_GLOSA AS nombreGlosa,
+       PA_MV_RUBRO.VALOR_GLOSA AS valorGlosa,
+       PA_MV_RUBRO.VALOR_NC AS valorNC,
+       PA_MV_RUBRO.OBSERVACION AS observacion,
+       PA_MV_RUBRO.FECHA_MODIFICACION_AUD AS fechaModificacionAud,
+       PA_MV_RUBRO.USUARIO_AUD AS usuarioAud,
+       PA_MV_RUBRO.MAQUINA_AUD AS maquinaAud,
+       PA_MV_RUBRO.OPERACION_AUD AS operacionAud,
+       PA_MV_RUBRO.ESTADO_AUD AS estadoAud
+  	   FROM medilab_pasiste.dbo.PA_MV_RUBRO PA_MV_RUBRO
+       INNER JOIN medilab_pasiste.dbo.PA_PM_RUBROS PA_PM_RUBROS
+          ON (PA_MV_RUBRO.ID_RUBRO = PA_PM_RUBROS.ID_RUBRO)
+ 	   WHERE     (PA_MV_RUBRO.ID_CUENTA = #{idCuenta})
+       AND (PA_MV_RUBRO.ID_FACTURA = #{idFactura}) 
+       AND (PA_MV_RUBRO.ESTADO_AUD='A')
+       ORDER BY PA_MV_RUBRO.CONSECUTIVO
+ 	</select>
+	
+	<select id="totalFacturas" resultType="Long" >
+		SELECT count(*)
+		FROM  medilab_pasiste.dbo.PA_MV_FACTURA
+		WHERE  ID_CUENTA=#{idCuenta} AND ESTADO_AUD = 'A'
+	</select>
+		
+	<select id="existeFactura" resultType="com.gci.siarp.cuentasMedicas.domain.Factura" >
+		SELECT ID_CUENTA idCuenta, ID_FACTURA idFactura, ID_TIPO_DOC_EMPRESA idTipoDocEmpresa, ID_EMPRESA idEmpresa, DV_EMPRESA dvEmpresa,	ID_TIPO_DOC idTipoDoc, ID_PERSONA idPersona, ID_DX idDX,
+		 NOMBRE_DX nombreDX,	ID_FURAT_FUREP idFuratFurep, FECHA_ATEP fechaAtep, TIPO_SINIESTRO tipoSiniestro, valor_neto valorNeto,valor_bruto valorBruto, NUMERO_AUTORIZACION numeroAutorizacion, 
+		 IND_RECOBRO indRecobro, IND_REINGRESO indReingreso, IND_ESTADO_FACTURA	indEstadoFactura, FECHA_ESTADO fechaEstado, DESCRIPCION_GLOSA descripcionGlosa, ORIGEN_GLOSA origenGlosa, 
+		 valor_glosa valorGlosa, NOTA_CREDITO notaCredito, NOTA_DEBITO notaDebito, FECHA_MODIFICACION_AUD fechaModificacionAUD,	USUARIO_AUD usuarioAUD,	MAQUINA_AUD maquinaAUD, OPERACION_AUD operacionAUD,
+		 ESTADO_AUD estadoAUD, FACTURA factura, FECHA_FACTURA fechaFactura,	OBSERVACION observacion, ID_SECCIONAL idSeccional, COMENT_RECOBRO comentRecobro, COMENT_NEGACION comentNegacion,
+		 COMENT_ORIGEN comentOrigen, VALOR_IVA valorIVA, CAUSA_RECOBRO causaRecobro, ID_TIPO_SOL idTipoSOl, ID_TIPO_DOC_PROV idTipoDocProv, ID_PROVEEDOR idProveedor, PREFIJO_FACTURA prefijoFactura,
+		 FECHA_SERVICIO fechaServicio,FECHA_AUTORIZACION fechaAutorizacion, ID_SUCURSAL idSucursal,TIPO_INCONSISTENCIA tipoInconsistencia, RECON_RESERVA reconReserva,ID_GLOSA idGLosa,
+		 ID_GENERADA idGenerada, ID_AUDITORIA idAuditoria,ID_ENVIO idEnvio, ID_SOLPAGO idSolPago, ID_PROFESIONAL idProfesional,IND_PPARCIAL indPparcial, IND_PPORCENTAJE indPporcentaje,
+		 FECHA_GENERADA fechaGenerada, FECHA_AUDITORIA fechaAuditoria,IND_VRCERTIFICADO indVRCertificado, FECHA_ENVIO fechaEnvio,FECHA_SOLPAGO fechaSolpago,ID_SIARP idSIARP, COD_STIKKER codSTIKKER,
+		 RETORNO_SISE retornoSISE, ID_SOLPAGO_ANT idSolpagoANT, IND_CAUSA_OK indCausaOK,ID_SIARP_NC idSIARPNC, RETORNO_SISE_NC retornoSISENC,ID_SOLNC idSolNC,ID_DEPARTAMENTO idDepartamento,
+		 ID_MUNICIPIO idMunicipio, AUD_CONCURRENTE audConcurrente, ID_RADICADOR idRadicador,ID_AUDITOR_CONCURRENTE idAuditorConcurrente, FECHA_RADICACION fechaRadicacion, COD_SUCURSAL codSucursal,
+		 ID_PROCESO idProceso, COD_SAP codSAP
+		FROM  medilab_pasiste.dbo.PA_MV_FACTURA
+		WHERE  ID_CUENTA=#{idCuenta} AND ID_FACTURA=#{idFactura} AND ESTADO_AUD = 'A'
+	</select>
+	
+	<select id="consultarCiudad" resultType="String">
+		<!--SELECT sec.NOMBRE_SECCIONAL
+		FROM siarp.dbo.GRAL_MA_SECCIONAL sec 
+		INNER JOIN siarp.dbo.GRAL_PM_MUNICIPIO mun 
+		 ON sec.id_seccional=mun.id_sucursal
+		WHERE mun.ID_DEPARTAMENTO =#{idDepartamento} AND mun.ID_MUNICIPIO =#{idMunicipio} AND mun.ESTADO_AUD='A'-->
+	
+	<!-- 	SELECT NOMBRE_MUNICIPIO 
+		FROM siarp.dbo.GRAL_PM_MUNICIPIO 
+		WHERE ID_DEPARTAMENTO = #{idDepartamento} AND ID_MUNICIPIO= #{idMunicipio} AND ESTADO_AUD = 'A'
+		 -->
+		 SELECT right('00'||convert(varchar(2),#{idDepartamento}) ,2)|| right('000'||convert(varchar(3),#{idMunicipio}),3) as cod_divipola
+	</select>
+	
+	<select id="consultarRubrosID" resultType="com.gci.siarp.cuentasMedicas.domain.PA_PM_Rubros">
+		SELECT ID_RUBRO idRubro, DESCRIPCION descripcion, COMISION comision, DEBITO_SAP debitoSAP, CREDITO_SAP creditoSAP,  ESTADO_AUD estadoAUD, OPERACION_AUD operacionAUD, USUARIO_AUD usuarioAUD,
+		 MAQUINA_AUD maquinaAUD, FECHA_MODIFICACION_AUD fechaModificacionAUD 
+		FROM medilab_pasiste.dbo.PA_PM_RUBROS
+		WHERE ID_RUBRO = #{idRubro} AND ESTADO_AUD = 'A'	
+	</select>
+	
+	<select id="maxConsecutivoRubro" resultType="Long">
+		SELECT case when MAX(CONSECUTIVO) =null then 0 else MAX(CONSECUTIVO) END 
+		FROM medilab_pasiste.dbo.PA_MV_RUBRO 
+		WHERE ID_CUENTA =#{idCuenta} and ID_FACTURA = #{idFactura}
+	</select>
+	
+	<select id="existeProveedor" resultType="Long">
+	SELECT TOP 1 COUNT(*) 
+	FROM medilab_pasiste.dbo.PA_MA_PROVEEDOR
+	WHERE ID_TIPO_DOC = #{DOC} AND ID_PROVEEDOR = #{ID} 
+	--AND ESTADO_AUD = 'A' SE QUITA LA REGLA POR LA EXTEMPORANEIDAD DE LA PRESENTACION DE LAS FACTURAS
+	</select>
+	
+	<select id="existeAfiliado" resultType="Boolean">
+	SELECT TOP 1 COUNT(*)
+	FROM siarp.dbo.GRAL_MA_PERSONA
+	WHERE ID_TIPO_DOC = #{tipoDoc} AND ID_PERSONA = #{documento} AND ESTADO_AUD = 'A'
+	</select>
+	
+	<select id="existeEmpresa" resultType="Long">
+	SELECT TOP 1 COUNT(*)
+	FROM siarp.dbo.GRAL_MA_EMPRESA
+	WHERE ID_TIPO_DOC = #{DOC} AND ID_EMPRESA = #{ID} AND ESTADO_AUD = 'A'
+	</select>
+	
+ 	<update id="habilitarPago">
+ 	UPDATE medilab_pasiste.dbo.PA_MV_PAGO
+	SET
+	  ID_SIARP = NULL  ,COD_ERROR = NULL 
+	WHERE ID_CUENTA = #{idCuenta} AND ID_FACTURA = #{idFactura}
+ 	</update>
+	
+	<update id="insertarReembolso">
+		UPDATE medilab_pasiste.dbo.PA_MA_CUENTA
+			SET
+   				ID_REEMBOLSO = #{idReembolso}
+   				,DV_EMPRESA = #{dvEmpresa}
+  				,TIPO_SOLICITANTE =#{tipoSolicitante} 
+  				<!-- ,ANO_RADICACION = #{anoRadicacion} 
+  				,CODIGO_SECCIONAL = #{codigoSeccional}
+  				,CODIGO_PAT = #{codigoPAT}
+  				,NUMERO_RADICACION =#{numeroRadicacion}  -->				
+  				,RAZON_SOCIAL = #{razonSocial}
+  				,TIPO_DOCUMENTO = #{tipoDocumento}
+  				,DOCUMENTO = #{documento}
+  				,CODIGO_BANCO = #{codigoBanco}
+  				,NATURALEZA_CUENTA =#{naturalezaCuenta}
+  				,NOMBRE_BANCO = #{nombreBanco}
+  				,TIPO_CUENTA = #{tipoCuenta}
+  				,NUMERO_CUENTA = #{numeroCuenta}
+  				,SUCURSAL_BANCARIA = #{sucursalBancaria}
+  				,TIPO_PERSONA = #{tipoPersona}
+  				,DIRECCION = #{direccion}
+  				,CORREO = #{correo}
+  				,CELULAR = #{celular}
+  				,TELEFONO = #{telefono} 
+		WHERE ID_CUENTA = #{idCuenta}
+	</update>
+
+<select id="buscarFacturasPagoSAP" resultType="com.gci.siarp.cuentasMedicas.domain.Factura" >
+		SELECT  TOP 5000  PA_MV_FACTURA.ID_CUENTA idCuenta, PA_MV_FACTURA.ID_FACTURA idFactura, 
+		CASE when IND_ESTADO_FACTURA ='AC' then 'Aceptada' else	
+			CASE when IND_ESTADO_FACTURA ='DE' then 'Devuelta' else	
+				CASE when IND_ESTADO_FACTURA ='IS' then 'Incompleta sin auditoria' else
+						CASE when IND_ESTADO_FACTURA ='IC' then 'Incompleta con auditoria' else
+							CASE when IND_ESTADO_FACTURA ='CS' then 'Completa sin auditoria' else
+									CASE when IND_ESTADO_FACTURA ='CC' then 'Completa con auditoria' else
+										CASE when IND_ESTADO_FACTURA ='GP' then 'Glosada' else
+											CASE when IND_ESTADO_FACTURA ='GT' then 'Generada Total' else
+			IND_ESTADO_FACTURA end end end end end end end end indEstadoFactura,
+			PA_MV_FACTURA.FACTURA factura, PA_MV_FACTURA.FECHA_RADICACION fechaRadicacion, PA_MV_FACTURA.ID_SIARP idSIARP, 
+			PA_MV_FACTURA.ID_PROVEEDOR idProveedor, PA_MV_FACTURA.valor_neto valorNeto,  case when PA_MV_FACTURA.ID_SOLPAGO=null then 0 else PA_MV_FACTURA.ID_SOLPAGO end idSolPago, PA_MV_FACTURA.RECON_RESERVA reconReserva, PA_MV_FACTURA.ID_FURAT_FUREP idFuratFurep, PA_MV_FACTURA.valor_bruto valorBruto
+  		FROM
+  		<if test="idSiarp !=null or estadoSAP != null ">medilab_pasiste.dbo.PA_MV_PAGO PA_MV_PAGO 
+       		LEFT JOIN
+       	</if>
+  		  medilab_pasiste.dbo.PA_MV_FACTURA PA_MV_FACTURA
+  		  
+  		  <if test="idSiarp !=null or estadoSAP != null">
+	          ON (PA_MV_FACTURA.ID_CUENTA=PA_MV_PAGO.ID_CUENTA)
+	          AND ( PA_MV_FACTURA.ID_FACTURA=PA_MV_PAGO.ID_FACTURA)
+          </if>
+		<where>
+			<if test="idCuenta != null">
+				AND PA_MV_FACTURA.ID_CUENTA = #{idCuenta}
+			</if>
+			<if test="factura != null">
+				AND PA_MV_FACTURA.FACTURA = #{factura}
+			</if>
+			<if test="prefFactura != null">
+				AND PA_MV_FACTURA.PREFIJO_FACTURA = #{prefFactura}
+			</if>
+			<!--  <if test="idSiarp != null">
+				AND PA_MV_FACTURA.ID_SIARP = #{idSiarp}
+			</if>-->
+			<if test="indEstadoFactura != null">
+				AND PA_MV_FACTURA.IND_ESTADO_FACTURA = #{indEstadoFactura}
+			</if>
+			<if test="idSeccional != null">
+				AND PA_MV_FACTURA.ID_SECCIONAL = #{idSeccional}
+			</if>
+			<if test="docProv != null and idProv !=null">
+				AND PA_MV_FACTURA.ID_TIPO_DOC_PROV = #{docProv}
+				AND PA_MV_FACTURA.ID_PROVEEDOR = #{idProv}
+			</if>
+			<if test="tipoDocEmpresa != null and idEmpresa !=null">
+				AND PA_MV_FACTURA.ID_EMPRESA =#{idEmpresa}
+				AND PA_MV_FACTURA.ID_TIPO_DOC_EMPRESA =	#{tipoDocEmpresa}
+			</if>
+			<if test="fechaInicial != null and fechaFinal != null">
+				AND PA_MV_FACTURA.FECHA_RADICACION between #{fechaInicial} AND #{fechaFinal}
+			</if>
+			<if test="estadoSAP != null">
+				AND (PA_MV_PAGO.COD_ERROR = #{estadoSAP})
+			</if>
+			<if test="idSiarp != null">
+				AND (PA_MV_PAGO.ID_SIARP = #{idSiarp})
+			</if>
+			AND PA_MV_FACTURA.ESTADO_AUD='A'
+		</where>
+
+</select>
+
+	<select id="cuentaReembolso" resultType="com.gci.siarp.cuentasMedicas.domain.Cuenta">
+		SELECT  ID_CUENTA idCuenta, DV_EMPRESA dvEmpresa,ID_REEMBOLSO idReembolso, TIPO_SOLICITANTE tipoSolicitante, ANO_RADICACION anoRadicacion, 
+			CODIGO_SECCIONAL codigoSeccional, CODIGO_PAT codigoPAT, NUMERO_RADICACION numeroRadicacion, RAZON_SOCIAL razonSocial, 
+			TIPO_DOCUMENTO tipoDocumento, DOCUMENTO documento, CODIGO_BANCO codigoBanco, NATURALEZA_CUENTA naturalezaCuenta, NOMBRE_BANCO nombreBanco, 
+			TIPO_CUENTA tipoCuenta, NUMERO_CUENTA numeroCuenta, SUCURSAL_BANCARIA sucursalBancaria, TIPO_PERSONA tipoPersona, DIRECCION direccion, 
+			CORREO correo, CELULAR celular, TELEFONO telefono
+		FROM medilab_pasiste.dbo.PA_MA_CUENTA
+		WHERE ID_CUENTA = #{idCuenta}	
+	</select>
+	
+	<update id="editarRubroPago">
+	UPDATE medilab_pasiste.dbo.PA_MV_PAGO
+	SET
+	  ID_RUBRO = #{newIdRubro}
+	  ,FECHA_MODIFICACION_AUD = getdate()
+	  ,USUARIO_AUD = #{usuario} 
+	  ,MAQUINA_AUD = #{maquina}
+	  ,OPERACION_AUD = 'A' 
+	WHERE ID_CUENTA = #{idCuenta}
+	  AND ID_FACTURA = #{idFactura}
+	  AND ID_RUBRO = #{oldIdRubro}
+	  AND (NRO_OP_SISE = null OR NRO_OP_SISE = 0) 
+	</update>
+	<update id="editarRubroGlosa">
+	UPDATE medilab_pasiste.dbo.PA_MV_GLOSA
+	SET
+	  ID_RUBRO = #{newIdRubro} 
+	  ,FECHA_MODIFICACION_AUD = getdate()
+	  ,USUARIO_AUD = #{usuario}
+	  ,MAQUINA_AUD = #{maquina}
+	  ,OPERACION_AUD = 'A'
+	WHERE ID_CUENTA = #{idCuenta}
+	 AND ID_FACTURA = #{idFactura} 
+	 AND ID_RUBRO = #{oldIdRubro}
+	</update>
+	
+	<select id="numeroFacturas" resultType="Integer">
+		SELECT NUMERO_FACTURAS
+		FROM medilab_pasiste.dbo.PA_MA_CUENTA
+		WHERE ID_CUENTA = #{idCuenta} and estado_aud='A'
+	</select>
+	
+	<select id="existeBanco" resultType="Integer">
+		SELECT id_banco from siarp.dbo.GRAL_MA_BANCO where id_banco = #{idBanco} and ESTADO_AUD = 'A'
+	</select>
+	
+	<select id="existeDiagnostico" resultType="Boolean">
+		select count (*) from siarp.dbo.GRAL_PM_DIAGNOSTICO where ID_DX = #{idDX} and ESTADO_AUD = 'A'
+	</select>
+	
+	<select id="existeDepartamento" resultType="Boolean">
+		SELECT  count (*) from siarp.dbo.GRAL_PM_DEPARTAMENTO where ID_DEPARTAMENTO = #{idDepartamento} and estado_aud = 'A'
+	</select>
+	<select id="existeMunicipio" resultType="Boolean">
+		SELECT  count (*) from siarp.dbo.GRAL_PM_MUNICIPIO where ID_DEPARTAMENTO = #{idDepartamento} and ID_MUNICIPIO = #{idMunicipio} and  estado_aud = 'A'
+	</select>
+	<select id="existeRubro" resultType="Boolean">
+		SELECT count(*)
+		FROM medilab_pasiste.dbo.PA_PM_RUBROS where ID_RUBRO = #{idRubro} AND ESTADO_AUD = 'A'
+	</select>
+	<select id="existeCuenta" resultType="Boolean">
+		SELECT count (*) FROM medilab_pasiste.dbo.PA_MA_CUENTA where ID_CUENTA= #{idCuenta} and ESTADO_AUD = 'A'
+	</select>
+	
+	<update id="actualizarIVARubro">
+		update medilab_pasiste..PA_MV_RUBRO set valor_iva = #{valor_iva}, fecha_modificacion_aud = getdate(), 
+			usuario_aud = #{ps_usuario}, maquina_aud = #{ps_maquina}, operacion_aud = 'A'
+			where id_cuenta = #{idCuenta} 
+			and id_factura = #{idFactura}
+			and id_rubro = #{idRubro}
+	</update>
+	
+
+
+	
+</mapper>

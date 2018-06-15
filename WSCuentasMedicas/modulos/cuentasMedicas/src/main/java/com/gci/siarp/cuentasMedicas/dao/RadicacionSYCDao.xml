@@ -1,0 +1,19 @@
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.gci.siarp.cuentasMedicas.dao.RadicacionSYCDao">
+
+<select id="consultarConsecutivoRadicacion" resultType="long">
+SELECT MAX(CONSECUTIVO) FROM medilab_pasiste.dbo.PA_MV_RADICACION_SYC WHERE ID_RADICADO = #{idCuenta} AND ID_FACTURA = #{idFactura}
+</select>
+
+<insert id="insertarRadicacionSYS">
+INSERT INTO medilab_pasiste.dbo.PA_MV_RADICACION_SYC (ID_RADICADO,ID_FACTURA,CONSECUTIVO,TIPO_MOV,FECHA_MOV,MULTIUSUARIO,CONCURRENTE,XML_RECIBIDO,   
+		RETORNO_SIARP,FECHA_MODIFICACION_AUD,USUARIO_AUD,MAQUINA_AUD,OPERACION_AUD,ESTADO_AUD)  
+values (#{idCuenta},#{idFactura},#{l_consecutivo}, #{tipoMov},getdate(),#{numFacturas},#{ps_visado},#{ps_factura},'',getdate(),#{ps_usuario},#{ps_maquina},'I','A')  
+</insert>
+
+<update id="actualizarSYC">
+UPDATE medilab_pasiste.dbo.PA_MV_RADICACION_SYC SET RETORNO_SIARP = #{retorno} 
+WHERE ID_RADICADO =#{idCuenta} AND ID_FACTURA =#{idFactura} AND CONSECUTIVO= #{l_consecutivo}
+</update>
+
+</mapper>

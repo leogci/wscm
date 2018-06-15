@@ -1,0 +1,217 @@
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.gci.siarp.cuentasMedicas.dao.SAPDao">
+
+	<update id="actualizarErrorPago">
+		UPDATE medilab_pasiste.dbo.PA_MV_PAGO
+		SET COD_ERROR = #{codError}, RETORNO_SAP = #{retornoSAP}, OPERACION_AUD ='A'
+		WHERE ID_SIARP =#{idSiarp} AND ESTADO_AUD = 'A'
+	</update>
+
+	<select id="recuperarRetornoSAPPago" resultType="String">
+		SELECT Top 1 RETORNO_SAP
+		FROM medilab_pasiste.dbo.PA_MV_PAGO 
+		WHERE ID_SIARP =#{idSiarp}
+	</select>
+	
+	<update id="actualizarPagosSAP">
+		UPDATE medilab_pasiste.dbo.PA_MV_PAGOS_SAP
+		 SET
+		  FECHA_RESPUESTA = getdate()
+		  ,TIPO = #{tipoRespuesta}
+		  ,RESPUESTA_SAP = #{respuestaSAP}
+		  ,OPERACION_AUD = 'A'
+		  ,USUARIO_AUD = #{usuario}
+		  ,MAQUINA_AUD = #{maquina}
+		  ,FECHA_MODIFICACION_AUD = getdate()
+		WHERE ID_SIARP = #{idSiarp}
+	</update>
+	
+	<update id="actualizarSolPagoFatura">
+		UPDATE medilab_pasiste.dbo.PA_MV_FACTURA
+ 		 SET  ID_SOLPAGO = 0 
+ 		WHERE (ID_SOLPAGO = #{idSiarp})
+	</update>
+
+	<update id="actualizarRespuestaPago">
+	UPDATE medilab_pasiste.dbo.PA_MV_PAGO
+	SET
+	  FECHA_PROCESADO =  getdate()
+	  ,FECHA_PAGO=#{fechaPago}
+	  ,NRO_OP_SAP = #{numOP}
+	  ,NRO_OP_SISE = #{numOPSise}
+	  ,COD_ERROR = null
+	  ,RETORNO_SAP = #{retornoSAP}
+	  ,FECHA_MODIFICACION_AUD = getdate()
+	  ,USUARIO_AUD =  #{usuario}
+	  ,MAQUINA_AUD = #{maquina}
+	  ,OPERACION_AUD = 'A'
+	WHERE 
+	 ID_SIARP =#{idSiarp} AND ESTADO_AUD = 'A'
+	</update>
+	
+	
+	<insert id="insertarDetallePago">
+	  INSERT INTO medilab_pasiste.dbo.PA_MV_PAGO_DETALLE(
+     	ID_SIARP ,NUM_CUENTA ,TIPO_RET ,IND_RET ,IND_IVA ,VALOR_MOV ,ESTADO_AUD ,OPERACION_AUD ,USUARIO_AUD ,MAQUINA_AUD ,FECHA_MODIFICACION_AUD)
+     VALUES(#{idSiarp}, #{numCuenta}, #{tipoRet}, #{indRet}, #{indIva}, #{valorMov}, 'A', 'I', #{usuario}, #{maquina}, getdate() )
+	</insert>
+	
+
+	<select id="pagossinreconocer" resultType="com.gci.siarp.cuentasMedicas.domain.Factura">
+	 	SELECT PA_MV_FACTURA.ID_CUENTA idCuenta,
+       		PA_MV_FACTURA.ID_FACTURA idFactura,
+       		PA_MV_FACTURA.ID_FURAT_FUREP idFuratFurep ,
+       		SUM (PA_MV_PAGO.VALOR_PAGO) valorNeto
+  	 	FROM medilab_pasiste.dbo.PA_MV_PAGO PA_MV_PAGO
+       		INNER JOIN medilab_pasiste.dbo.PA_MV_FACTURA PA_MV_FACTURA
+          ON     (PA_MV_PAGO.ID_CUENTA = PA_MV_FACTURA.ID_CUENTA)
+             AND (PA_MV_PAGO.ID_FACTURA = PA_MV_FACTURA.ID_FACTURA)
+ 		WHERE     (PA_MV_FACTURA.ID_CUENTA = #{idCuenta})
+       	  AND (PA_MV_FACTURA.RECON_RESERVA = 'A')
+          AND (PA_MV_FACTURA.ESTADO_AUD = 'A')
+          AND (PA_MV_PAGO.ESTADO_AUD = 'A')
+          AND (PA_MV_PAGO.RECON_RESERVA = 'N')
+		GROUP BY PA_MV_FACTURA.ID_CUENTA,PA_MV_FACTURA.ID_FACTURA, PA_MV_FACTURA.ID_FURAT_FUREP
+	</select>
+	
+	<select id="CuentasPorPagarSAP" resultType="Long">
+	SELECT TOP 100 PA_MV_FACTURA.ID_CUENTA      		   
+  		FROM (medilab_pasiste.dbo.PA_MV_FACTURA PA_MV_FACTURA
+        	  INNER JOIN medilab_pasiste.dbo.PA_MA_CUENTA PA_MA_CUENTA
+           	  ON (PA_MV_FACTURA.ID_CUENTA = PA_MA_CUENTA.ID_CUENTA))
+             INNER JOIN
+       		  (SELECT DISTINCT PA_MV_FACTURA.ID_CUENTA
+               FROM medilab_pasiste.dbo.PA_MV_FACTURA PA_MV_FACTURA
+               INNER JOIN medilab_pasiste.dbo.PA_MV_PAGO PA_MV_PAGO
+                  ON     (PA_MV_FACTURA.ID_CUENTA = PA_MV_PAGO.ID_CUENTA)
+                     AND (PA_MV_FACTURA.ID_FACTURA = PA_MV_PAGO.ID_FACTURA)
+         WHERE     (PA_MV_FACTURA.IND_VRCERTIFICADO = -2 AND PA_MV_FACTURA.RECON_RESERVA= 'A')
+               AND (PA_MV_PAGO.ID_SIARP IS NULL) AND (PA_MV_PAGO.COD_ERROR IS NULL) AND (PA_MV_PAGO.ESTADO_AUD = 'A')) Subquery
+          ON (PA_MV_FACTURA.ID_CUENTA = Subquery.ID_CUENTA)
+		GROUP BY PA_MV_FACTURA.ID_CUENTA, PA_MA_CUENTA.NUMERO_FACTURAS,PA_MA_CUENTA.FECHA_RADICADO
+    having PA_MA_CUENTA.NUMERO_FACTURAS = COUNT (PA_MV_FACTURA.ID_FACTURA) AND 
+    SUM (CASE WHEN IND_VRCERTIFICADO = -2 THEN 1 ELSE 0 END) = PA_MA_CUENTA.NUMERO_FACTURAS    
+    	ORDER BY PA_MA_CUENTA.FECHA_RADICADO		
+	</select>
+	
+	<update id="actualizarPAGOSAP">
+		UPDATE medilab_pasiste.dbo.PA_MV_PAGO
+		SET ID_SIARP = #{idSIARP},
+			FECHA_ENVIO = #{fechaEnvio}
+  		WHERE ID_CUENTA = #{idCuenta} AND ESTADO_AUD = 'A' AND ID_SIARP IS NULL AND RECON_RESERVA='S'
+	</update>
+	
+	<select id="pagarSAP" resultType="com.gci.siarp.cuentasMedicas.domain.Factura">
+		SELECT TOP 1 ID_CUENTA idCuenta, ID_FACTURA idFactura, ID_TIPO_DOC_EMPRESA idTipoDocEmpresa, ID_EMPRESA idEmpresa, DV_EMPRESA dvEmpresa,	ID_TIPO_DOC idTipoDoc, ID_PERSONA idPersona, ID_DX idDX,
+		 NOMBRE_DX nombreDX,	ID_FURAT_FUREP idFuratFurep, FECHA_ATEP fechaAtep, TIPO_SINIESTRO tipoSiniestro, valor_neto valorNeto,valor_bruto valorBruto, NUMERO_AUTORIZACION numeroAutorizacion, 
+		 IND_RECOBRO indRecobro, IND_REINGRESO indReingreso, IND_ESTADO_FACTURA	indEstadoFactura, FECHA_ESTADO fechaEstado, DESCRIPCION_GLOSA descripcionGlosa, ORIGEN_GLOSA origenGlosa, 
+		 valor_glosa valorGlosa, NOTA_CREDITO notaCredito, NOTA_DEBITO notaDebito, FECHA_MODIFICACION_AUD fechaModificacionAUD,	USUARIO_AUD usuarioAUD,	MAQUINA_AUD maquinaAUD, OPERACION_AUD operacionAUD,
+		 ESTADO_AUD estadoAUD, FACTURA factura, FECHA_FACTURA fechaFactura,	OBSERVACION observacion, ID_SECCIONAL idSeccional, COMENT_RECOBRO comentRecobro, COMENT_NEGACION comentNegacion,
+		 COMENT_ORIGEN comentOrigen, VALOR_IVA valorIVA, CAUSA_RECOBRO causaRecobro, ID_TIPO_SOL idTipoSOl, ID_TIPO_DOC_PROV idTipoDocProv, ID_PROVEEDOR idProveedor, PREFIJO_FACTURA prefijoFactura,
+		 FECHA_SERVICIO fechaServicio,FECHA_AUTORIZACION fechaAutorizacion, ID_SUCURSAL idSucursal,TIPO_INCONSISTENCIA tipoInconsistencia, RECON_RESERVA reconReserva,ID_GLOSA idGLosa,
+		 ID_GENERADA idGenerada, ID_AUDITORIA idAuditoria,ID_ENVIO idEnvio, ID_SOLPAGO idSolPago, ID_PROFESIONAL idProfesional,IND_PPARCIAL indPparcial, IND_PPORCENTAJE indPporcentaje,
+		 FECHA_GENERADA fechaGenerada, FECHA_AUDITORIA fechaAuditoria,IND_VRCERTIFICADO indVRCertificado, FECHA_ENVIO fechaEnvio,FECHA_SOLPAGO fechaSolpago,ID_SIARP idSIARP, COD_STIKKER codSTIKKER,
+		 RETORNO_SISE retornoSISE, ID_SOLPAGO_ANT idSolpagoANT, IND_CAUSA_OK indCausaOK,ID_SIARP_NC idSIARPNC, RETORNO_SISE_NC retornoSISENC,ID_SOLNC idSolNC,ID_DEPARTAMENTO idDepartamento,
+		 ID_MUNICIPIO idMunicipio, AUD_CONCURRENTE audConcurrente, ID_RADICADOR idRadicador,ID_AUDITOR_CONCURRENTE idAuditorConcurrente, FECHA_RADICACION fechaRadicacion, COD_SUCURSAL codSucursal,
+		 ID_PROCESO idProceso, COD_SAP codSAP
+		FROM medilab_pasiste.dbo.PA_MV_FACTURA
+		WHERE ID_CUENTA = #{idCuenta} AND ESTADO_AUD = 'A' 
+	</select>
+	
+	<select id="consultarCodigoSAP" resultType="String">
+	 	SELECT sec.COD_SAP
+		FROM siarp.dbo.GRAL_MA_SECCIONAL sec 
+		INNER JOIN siarp.dbo.GRAL_PM_MUNICIPIO mun 
+		 ON sec.id_seccional=mun.id_sucursal
+		WHERE mun.ID_DEPARTAMENTO =#{idDepartamento} AND mun.ID_MUNICIPIO =#{idMunicipio} AND mun.ESTADO_AUD='A'
+	</select>
+	
+	<select id="valoresPagoSAP" resultType="Map">
+	SELECT PA_MV_PAGO.ID_CUENTA AS idCuenta,
+       PA_MV_PAGO.ID_RUBRO AS idRubro,
+       convert(VARCHAR(150), CASE WHEN SUM (PA_MV_PAGO.VALOR_PAGO) = NULL THEN 0  ELSE SUM (PA_MV_PAGO.VALOR_PAGO) END)   AS ValorPago,
+       convert(VARCHAR(150), CASE WHEN SUM (PA_MV_RUBRO.VALOR_IVA) = NULL THEN 0  ELSE SUM (PA_MV_RUBRO.VALOR_IVA) END)	  AS ValorIVA				         
+  	FROM (medilab_pasiste.dbo.PA_MV_PAGO PA_MV_PAGO
+        INNER JOIN medilab_pasiste.dbo.PA_PM_RUBROS PA_PM_RUBROS
+           ON (PA_MV_PAGO.ID_RUBRO = PA_PM_RUBROS.ID_RUBRO))
+       INNER JOIN medilab_pasiste.dbo.PA_MV_RUBRO PA_MV_RUBRO
+          ON     (PA_MV_PAGO.ID_CUENTA = PA_MV_RUBRO.ID_CUENTA)
+             AND (PA_MV_PAGO.ID_RUBRO = PA_MV_RUBRO.ID_RUBRO)
+             AND (PA_MV_PAGO.ID_FACTURA = PA_MV_RUBRO.ID_FACTURA)
+	 WHERE     (PA_MV_PAGO.ID_CUENTA = #{idCuenta})
+       AND (PA_MV_PAGO.ID_SIARP IS NULL)
+       AND (PA_MV_PAGO.RECON_RESERVA = 'S')
+       AND (PA_MV_PAGO.ESTADO_AUD = 'A')
+       AND (PA_MV_RUBRO.ESTADO_AUD = 'A')
+       AND (PA_PM_RUBROS.ESTADO_AUD = 'A')
+	GROUP BY PA_MV_PAGO.ID_CUENTA, PA_MV_PAGO.ID_RUBRO
+	ORDER BY idRubro DESC
+	</select>
+	
+	<insert id="insertarHistoricoSAP">
+ 		INSERT INTO medilab_pasiste.dbo.PA_MV_PAGOS_SAP(ID_SIARP,ID_CUENTA,VALOR_PAGO,VALOR_COMISION,FECHA_ENVIO,FECHA_RESPUESTA,TIPO,RESPUESTA_SAP
+  				,ESTADO_AUD,OPERACION_AUD,USUARIO_AUD,MAQUINA_AUD,FECHA_MODIFICACION_AUD) 
+  		VALUES (#{idSIARP},#{idCuenta},#{valorPago},#{valorComision},#{fechaEnvio},#{fechaRespuesta},#{tipo},#{respuestaSAP},'A','I','GCI','GCI',getdate())
+ 	</insert>
+ 	
+ 	<update id="actualizarPagoError">
+		UPDATE medilab_pasiste.dbo.PA_MV_PAGO
+	 	 SET ID_SIARP = #{idSIARP} 			
+	 		,COD_ERROR = #{codERROR}
+  			,RETORNO_SAP = #{descERROR}
+ 		WHERE ID_CUENTA = #{idCuenta} AND ID_FACTURA = #{idFactura} AND ESTADO_AUD='A'
+ 	</update>
+ 	
+ 	<select id="listadoPagosSAP" resultType="com.gci.siarp.cuentasMedicas.domain.Pago">
+		SELECT ID_CUENTA idCuenta, ID_FACTURA idFactura,ID_PAGO idPago, ID_RUBRO idRubro,FECHA_PAGO fechaPago,VALOR_PAGO valorPago,	VALOR_IVA valorIva,	OBSERVACION observacion,
+		 FECHA_MODIFICACION_AUD fechaModificacionAUD,USUARIO_AUD usuarioAUD,	MAQUINA_AUD maquinaAUD,	OPERACION_AUD operacionAUD,	ESTADO_AUD estadoAUD,FECHA_ENVIO fechaEnvio,
+		 FECHA_SOLPAGO fechaSolPago, ID_ENVIO idEnvio,ESTADO estado,TIPO_PAGO tipoPago,ID_PAGO_SISE idPagoSISE,RECON_RESERVA ReconReserva,VALOR_PAGO_SISE valorPagoSISE,
+		 NRO_OP_SISE_ANT NROOPSISEANT,RETORNO_SISE retornoSISE,NRO_OP_SISE NROOPSISE,IND_PROCESO INDProceso,IND_RESERVA INDReserva,FECHA_CALCULO fechaCalculo,ID_SIARP idSiarp,
+		 FECHA_PROCESADO fechaProcesado, COD_ERROR codError, NRO_OP_SAP NROOPSAP, RETORNO_SAP retornoSAP 
+		FROM medilab_pasiste.dbo.PA_MV_PAGO
+		WHERE ID_CUENTA = #{idCuenta} AND ID_SIARP IS NULL AND ESTADO_AUD='A'
+	</select>
+	
+	<select id="consultaridSIARP" resultType="String">
+		SELECT VALOR
+		FROM medilab_pasiste.dbo.PA_PM_PARAMETROS
+		WHERE TIPO = 'CONSECUTIVO_SISE' AND CONSECUTIVO = 1 AND ESTADO_AUD = 'A'
+	</select>
+	
+	<update id="actualizaridSIARP">
+		UPDATE medilab_pasiste.dbo.PA_PM_PARAMETROS 
+		 SET VALOR = #{idSIARP}
+		WHERE TIPO = 'CONSECUTIVO_SISE' AND CONSECUTIVO = 1 AND ESTADO_AUD = 'A'
+	</update>
+	
+	<update id="actualizarIDSOLPAGO">
+ 		UPDATE  medilab_pasiste..PA_MV_FACTURA
+ 		 SET medilab_pasiste..PA_MV_FACTURA.ID_SOLPAGO = #{idSIARP}
+  	 	FROM medilab_pasiste..PA_MV_FACTURA 
+  	  	INNER JOIN medilab_pasiste..PA_MV_PAGO
+          ON (medilab_pasiste..PA_MV_PAGO.ID_CUENTA = medilab_pasiste..PA_MV_FACTURA.ID_CUENTA)
+             AND (medilab_pasiste..PA_MV_PAGO.ID_FACTURA = medilab_pasiste..PA_MV_FACTURA.ID_FACTURA)
+ 	 	WHERE(medilab_pasiste..PA_MV_FACTURA.ID_CUENTA = #{idCuenta})
+       	 AND (medilab_pasiste..PA_MV_PAGO.ID_SIARP IS NULL)
+         AND (medilab_pasiste..PA_MV_PAGO.ESTADO_AUD = 'A')
+       	 AND (medilab_pasiste..PA_MV_FACTURA.ESTADO_AUD = 'A') 	
+ 	</update>
+ 	
+ 	<select id="accionReprocesar" resultType="String">
+ 	SELECT ACCION
+	FROM medilab_pasiste.dbo.PA_PM_MOTIVO_ANULACION where CODIGO_ANULACION = #{codAnula} and  ESTADO_AUD='A'
+ 	</select>
+ 	
+ 	<update id="marcarReprocesoSAP">
+ 	UPDATE medilab_pasiste.dbo.PA_MV_PAGO
+	SET
+	  FECHA_MODIFICACION_AUD = getdate()
+	  ,USUARIO_AUD = 'GCI'
+	  ,MAQUINA_AUD = 'GCI'
+	  ,OPERACION_AUD = 'A'
+	  ,ID_SIARP = NULL
+	  ,COD_ERROR = NULL
+	WHERE ID_SIARP = #{idSiarp}
+ 	</update>
+	
+</mapper>

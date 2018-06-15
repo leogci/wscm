@@ -1,0 +1,185 @@
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.gci.siarp.cuentasMedicas.dao.AcuerdosDao">
+
+	<select id="allAcuerdos" resultType="com.gci.siarp.cuentasMedicas.domain.Acuerdo">
+		SELECT ID_ACUERDO idAcuerdo,
+		ID_TIPO_DOC idTipoDoc, ID_PROVEEDOR
+		idProveedor, FECHA_ACUERDO
+		fechaAcuerdo, VALOR_ACUERDO valorAcuerdo,
+		SALDO_ACUERDO saldoAcuerdo,
+		OBSERVACION observacion, case when ESTADO ='A' then 'Abierto' else
+		'Cerrado' end estado, Case when ESTADO_AUD = 'A' then 'Activo' else
+		'Inactivo' end estadoAUD
+		FROM
+		medilab_pasiste.dbo.PA_MA_ACUERDO
+
+	</select>
+
+	<select id="maxIDAcuerdo" resultType="Integer">
+		SELECT CASE WHEN Max
+		(ID_ACUERDO) = NULL THEN 0 ELSE Max (ID_ACUERDO) END
+		FROM
+		medilab_pasiste.dbo.PA_MA_ACUERDO
+	</select>
+
+
+	<insert id="crearAcuerdo">
+		INSERT INTO medilab_pasiste.dbo.PA_MA_ACUERDO(
+		ID_ACUERDO, ID_TIPO_DOC, ID_PROVEEDOR, FECHA_ACUERDO, VALOR_ACUERDO,
+		SALDO_ACUERDO, OBSERVACION, ESTADO, ESTADO_AUD,
+		FECHA_MODIFICACION_AUD, MAQUINA_AUD, USUARIO_AUD, OPERACION_AUD)
+		VALUES (#{idAcuerdo}, #{idTipoDoc}, #{idProveedor}, #{fechaAcuerdo},
+		#{valorAcuerdo}, #{saldoAcuerdo}, #{observacion}, 'A', 'A', getdate(),
+		#{maquina}, #{usuario}, 'I')
+	</insert>
+
+	<update id="cambiarEstado">
+		UPDATE medilab_pasiste.dbo.PA_MA_ACUERDO
+		SET
+		ESTADO_AUD = #{estado}
+		,FECHA_MODIFICACION_AUD = getdate()
+		,MAQUINA_AUD
+		=#{maquina}
+		,USUARIO_AUD = #{usuario}
+		,OPERACION_AUD = 'A'
+		WHERE
+		ID_ACUERDO = #{idAcuerdo}
+	</update>
+
+	<update id="cerrarAcuerdo">
+		UPDATE medilab_pasiste.dbo.PA_MA_ACUERDO
+		SET
+		ESTADO = 'C'
+		,ESTADO_AUD = 'I'
+		,FECHA_MODIFICACION_AUD = getdate(), MAQUINA_AUD = #{maquina}
+		,USUARIO_AUD = #{usuario}
+		,OPERACION_AUD = 'A'
+		WHERE ID_ACUERDO =
+		#{idAcuerdo}
+	</update>
+
+	<select id="validarCuenta" resultType="Double">
+		SELECT CASE WHEN COUNT (PA_MV_FACTURA.ID_CUENTA)= PA_MA_CUENTA.NUMERO_FACTURAS
+					THEN CASE WHEN SUM (PA_MV_FACTURA.valor_neto - (CASE WHEN PA_MV_FACTURA.NOTA_CREDITO =null then 0 ELSE PA_MV_FACTURA.NOTA_CREDITO END)) = PA_MA_CUENTA.VALOR_CUENTA
+					THEN SUM (PA_MV_FACTURA.valor_neto)
+					ELSE-2	END
+					ELSE -1	END
+		FROM medilab_pasiste.dbo.PA_MV_FACTURA PA_MV_FACTURA INNER	JOIN	medilab_pasiste.dbo.PA_MA_CUENTA PA_MA_CUENTA
+			ON (PA_MV_FACTURA.ID_CUENTA = PA_MA_CUENTA.ID_CUENTA)
+			WHERE (PA_MA_CUENTA.ID_CUENTA = #{idCuenta}) AND PA_MA_CUENTA.ESTADO_AUD ='A'
+		GROUP BY PA_MA_CUENTA.NUMERO_FACTURAS, PA_MA_CUENTA.VALOR_CUENTA
+	</select>
+
+
+	<insert id="insertarFac_Acuerdo">
+		INSERT INTO medilab_pasiste.dbo.PA_MV_FACT_ACUERDO(
+		ID_ACUERDO ,ID_CUENTA
+		,PREFIJO_FACTURA ,FACTURA ,ESTADO_AUD
+		,FECHA_MODIFICACION_AUD
+		,MAQUINA_AUD ,USUARIO_AUD ,OPERACION_AUD, VALOR_FACTURA )
+		VALUES ( #{idAcuerdo}
+		,#{idCuenta} ,#{prefijoFactura} ,#{factura} ,'A'
+		,getdate() ,#{maquina} ,#{usuario} ,'I', #{valorCuenta}
+		)
+	</insert>
+
+	<select id="acuerdosByProveedor" resultType="com.gci.siarp.cuentasMedicas.domain.Acuerdo">
+
+		SELECT ID_ACUERDO idAcuerdo, ID_TIPO_DOC idTipoDoc, ID_PROVEEDOR idProveedor,
+		FECHA_ACUERDO fechaAcuerdo, VALOR_ACUERDO valorAcuerdo, SALDO_ACUERDO saldoAcuerdo,
+		OBSERVACION observacion, ESTADO estado, ESTADO_AUD estadoAUD
+		FROM medilab_pasiste.dbo.PA_MA_ACUERDO
+		where ID_TIPO_DOC =#{idTipoDoc} AND ID_PROVEEDOR=#{idProveedor} AND	ESTADO='A' AND	ESTADO_AUD ='A' ORDER BY FECHA_ACUERDO ASC
+	</select>
+
+	<select id="glosaByCuenta" resultType="Integer">
+		SELECT COUNT(ID_CUENTA)
+		FROM medilab_pasiste.dbo.PA_MV_GLOSA where ID_CUENTA = #{idCuenta} AND
+		ESTADO_AUD='A'
+	</select>
+
+
+	<select id="auditoriaCompletaCuenta" resultType="Integer">
+		SELECT COUNT(IND_ESTADO_FACTURA)
+		FROM medilab_pasiste.dbo.PA_MV_FACTURA where ID_CUENTA = #{idCuenta} AND
+		IND_ESTADO_FACTURA NOT IN('CC','AC') and ESTADO_AUD= 'A'
+	</select>
+	
+	<select id="facturaAcuerdo" resultType="com.gci.siarp.cuentasMedicas.domain.Factura">
+		SELECT TOP 1
+		PA_MV_FACTURA.ID_TIPO_DOC_PROV idTipoDocProv, PA_MV_FACTURA.ID_PROVEEDOR idProveedor, PA_MV_FACTURA.PREFIJO_FACTURA prefijoFactura, PA_MV_FACTURA.FACTURA factura
+		FROM (medilab_pasiste.dbo.PA_MA_CUENTA PA_MA_CUENTA INNER
+		JOIN
+		medilab_pasiste.dbo.PA_MV_FACTURA PA_MV_FACTURA ON
+		(PA_MA_CUENTA.ID_CUENTA = PA_MV_FACTURA.ID_CUENTA))INNER JOIN
+		medilab_pasiste.dbo.PA_MA_PROVEEDOR PA_MA_PROVEEDOR ON
+		(PA_MV_FACTURA.ID_TIPO_DOC_PROV = PA_MA_PROVEEDOR.ID_TIPO_DOC) AND
+		(PA_MV_FACTURA.ID_PROVEEDOR = PA_MA_PROVEEDOR.ID_PROVEEDOR)
+		WHERE
+		(PA_MA_CUENTA.ID_CUENTA = #{idCuenta}) AND (PA_MA_CUENTA.ESTADO_AUD =
+		'A')
+
+	</select>
+	
+	
+	<select id="buscarCuentasAcuerdo" resultType="com.gci.siarp.cuentasMedicas.domain.CuentaAcuerdo">
+	
+	SELECT PA_MV_FACTURA.ID_CUENTA AS idCuenta,
+       PA_MV_FACT_ACUERDO.PREFIJO_FACTURA AS prefijoFactura,
+       PA_MV_FACT_ACUERDO.FACTURA AS factura,
+       PA_MV_FACT_ACUERDO.VALOR_FACTURA AS valorFactura,
+       MIN (PA_MA_PROVEEDOR.ID_TIPO_DOC) AS idTipoDoc,
+       MIN (PA_MA_PROVEEDOR.ID_PROVEEDOR) AS idProveedor,
+       MIN (PA_MA_PROVEEDOR.RAZON_SOCIAL) AS razonSocial,
+       SUM (PA_MV_FACTURA.valor_neto) AS totalNeto,
+       SUM (PA_MV_FACTURA.NOTA_CREDITO) AS totalCredito
+  FROM (medilab_pasiste.dbo.PA_MV_FACT_ACUERDO PA_MV_FACT_ACUERDO
+        INNER JOIN medilab_pasiste.dbo.PA_MV_FACTURA PA_MV_FACTURA
+           ON (PA_MV_FACT_ACUERDO.ID_CUENTA = PA_MV_FACTURA.ID_CUENTA))
+       INNER JOIN medilab_pasiste.dbo.PA_MA_PROVEEDOR PA_MA_PROVEEDOR
+          ON     (PA_MV_FACTURA.ID_TIPO_DOC_PROV =
+                     PA_MA_PROVEEDOR.ID_TIPO_DOC)
+             AND (PA_MV_FACTURA.ID_PROVEEDOR = PA_MA_PROVEEDOR.ID_PROVEEDOR)
+ WHERE (PA_MV_FACT_ACUERDO.ID_ACUERDO = #{idAcuerdo})
+GROUP BY PA_MV_FACTURA.ID_CUENTA,
+         PA_MV_FACT_ACUERDO.PREFIJO_FACTURA,
+         PA_MV_FACT_ACUERDO.FACTURA
+	
+	</select>
+	
+
+	
+	
+
+	<update id="actualizarSaldoAcuerdo">      
+	
+	declare @valor numeric (12,0) 
+	 SELECT @valor = SUM (PA_MV_FACTURA.valor_bruto)
+
+			 			FROM medilab_pasiste.dbo.PA_MV_FACTURA PA_MV_FACTURA
+			       		INNER JOIN medilab_pasiste.dbo.PA_MV_FACT_ACUERDO PA_MV_FACT_ACUERDO
+			          	ON (PA_MV_FACTURA.ID_CUENTA = PA_MV_FACT_ACUERDO.ID_CUENTA)
+						WHERE     (PA_MV_FACT_ACUERDO.ESTADO_AUD = 'A')
+			       		AND (PA_MV_FACT_ACUERDO.ID_ACUERDO =  #{idAcuerdo}) 
+	 
+       UPDATE medilab_pasiste.dbo.PA_MA_ACUERDO
+		SET
+		 SALDO_ACUERDO = VALOR_ACUERDO - case when @valor =null then 0 else @valor end
+		,FECHA_MODIFICACION_AUD = getdate()
+		,MAQUINA_AUD= #{maquina}
+		,USUARIO_AUD =  #{usuario}
+		,OPERACION_AUD = 'A'
+		WHERE
+		ID_ACUERDO = #{idAcuerdo}
+	</update>
+	
+	<select id="consultaComunMora" resultType="Long">
+	SELECT MAX (PA_MV_FACTURA.ID_CUENTA)
+ 	 FROM medilab_pasiste.dbo.PA_MV_FACTURA PA_MV_FACTURA
+       INNER JOIN siniestros_socupa.dbo.ATEP_MA_SINIESTRO ATEP_MA_SINIESTRO
+          ON (PA_MV_FACTURA.ID_FURAT_FUREP = ATEP_MA_SINIESTRO.ID_SINIESTRO)
+	 WHERE (    PA_MV_FACTURA.ID_CUENTA = #{idCuenta}
+        AND (   ATEP_MA_SINIESTRO.Ind_moroso = 1 OR ATEP_MA_SINIESTRO.Ind_comun = 1))
+	</select>
+
+</mapper>

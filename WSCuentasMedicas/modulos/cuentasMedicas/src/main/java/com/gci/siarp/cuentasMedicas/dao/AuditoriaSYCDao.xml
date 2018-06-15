@@ -1,0 +1,47 @@
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.gci.siarp.cuentasMedicas.dao.AuditoriaSYCDao">
+
+
+	<insert id="insertarAuditoriaSYC" parameterType="com.gci.siarp.cuentasMedicas.domain.AuditoriaSYC"
+		useGeneratedKeys="true" keyProperty="idAuditoriaSYC" keyColumn="ID_AUDITORIA_SYC">
+
+		INSERT
+		INTO
+		medilab_pasiste.dbo.PA_MV_AUDITORIA_SYC(
+		ID_AUDITORIA ,CONSECUTIVO
+		,ID_RADICADO ,FECHA_AUDITORIA ,XML_RECIBIDO,
+		RETORNO_SIARP,FECHA_MODIFICACION_AUD ,USUARIO_AUD, MAQUINA_AUD,
+		OPERACION_AUD,
+		ESTADO_AUD ,ID_PROVEEDOR ,ID_FACTURA )
+		VALUES (
+		0, 0,
+		#{idRadicado}, #{fechaAuditoria}, #{xmlRecibido},
+		'Inicio de transferencia',
+		#{fechaModificacionAud},#{usuarioAud}, #{maquinaAud},
+		'I',
+		'A', #{idProveedor},
+		#{idFactura})
+
+	</insert>
+
+	<update id="actualizarAuditoriaSYC" parameterType="com.gci.siarp.cuentasMedicas.domain.AuditoriaSYC">
+		UPDATE
+		medilab_pasiste.dbo.PA_MV_AUDITORIA_SYC
+		SET
+		ID_RADICADO=#{idRadicado},
+		RETORNO_SIARP=#{retornoSiarp},
+		ID_PROVEEDOR=#{idProveedor}, ID_FACTURA
+		= #{idFactura},
+		FECHA_MODIFICACION_AUD = getdate()
+		WHERE
+		ID_AUDITORIA_SYC =#{idAuditoriaSYC}
+	</update>
+	
+	<select id="obtenerEstadoGlosa" resultType="String">
+		select estado_glosa from medilab_pasiste..PA_MV_GLOSA where ID_CUENTA = #{id_cuenta} and ID_FACTURA = #{id_factura}
+		group by id_cuenta, id_factura having consecutivo = max(consecutivo)
+	</select>
+
+</mapper>
+
+

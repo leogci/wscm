@@ -1,0 +1,15 @@
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.gci.siarp.cuentasMedicas.dao.ReportesCMDao">
+
+<select id="getDataWindowReporte" resultType="String">
+	SELECT dw
+	FROM pecono_reservas.dbo.pm_reportes where descrip_reporte = #{nombreReporte}
+</select>
+
+
+<select id="getCodigoReporte" resultType="Integer">
+	SELECT cod_reporte
+	FROM pecono_reservas.dbo.pm_reportes where descrip_reporte = #{nombreReporte}
+</select>
+
+</mapper>

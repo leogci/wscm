@@ -1,0 +1,173 @@
+package com.gci.siarp.cuentasMedicas.domain;
+
+import java.util.Date;
+import lombok.Data;
+
+@Data
+public class Factura {
+	
+	public Factura(){		
+	}
+	
+	 public Factura(Factura factura) {
+		
+		 this.idCuenta =factura.getIdCuenta();
+		 this.idFactura =factura.getIdFactura();
+		 this.idTipoDocEmpresa =factura.getIdTipoDocEmpresa();
+		 this.idEmpresa =factura.getIdEmpresa();
+		 this.dvEmpresa =factura.getDvEmpresa();
+		 this.idTipoDoc =factura.getIdTipoDoc();
+		 this.idPersona =factura.getIdPersona();
+		 this.idDX =factura.getIdDX();
+		 this.nombreDX = factura.getNombreDX();
+		 this.idFuratFurep =factura.getIdFuratFurep();
+		 this.fechaAtep =factura.getFechaAtep();
+		 this.tipoSiniestro =factura.getTipoSiniestro();
+		 this.valorNeto =factura.getValorNeto();
+		 this.valorBruto =factura.getValorBruto();
+		 this.numeroAutorizacion =  factura.getNumeroAutorizacion  ();
+		 this.indRecobro =   factura.getIndRecobro   ();
+		 this.indReingreso =factura.getIndReingreso();
+		 this.indEstadoFactura =factura.getIndEstadoFactura();
+		 this.fechaEstado =factura.getFechaEstado();
+		 this.descripcionGlosa =factura.getDescripcionGlosa();
+		 this.origenGlosa =factura.getOrigenGlosa();
+		 this.valorGlosa =factura.getValorGlosa();
+		 this.notaCredito =factura.getNotaCredito();
+		 this.notaDebito =factura.getNotaDebito();
+		 this.fechaModificacionAUD =   factura.getFechaModificacionAUD   ();
+		 this.usuarioAUD =factura.getUsuarioAUD();
+		 this.maquinaAUD =factura.getMaquinaAUD();
+		 this.operacionAUD =factura.getOperacionAUD();
+		 this.estadoAUD =factura.getEstadoAUD();
+		 this.factura =factura.getFactura();
+		 this.fechaFactura =factura.getFechaFactura();
+		 this.observacion =factura.getObservacion();
+		 this.idSeccional =factura.getIdSeccional();
+		 this.comentRecobro =factura.getComentRecobro();
+		 this.comentNegacion =factura.getComentNegacion();
+		 this.comentOrigen =factura.getComentOrigen();
+		 this.valorIVA =factura.getValorIVA();
+		 this.causaRecobro =factura.getCausaRecobro();
+		 this.idTipoSOl =factura.getIdTipoSOl();
+		 this.idTipoDocProv =factura.getIdTipoDocProv();
+		 this.idProveedor =factura.getIdProveedor();
+		 this.prefijoFactura =factura.getPrefijoFactura();
+		 this.fechaServicio =factura.getFechaServicio();
+		 this.fechaAutorizacion =factura.getFechaAutorizacion();
+		 this.idSucursal = factura.getIdSucursal();
+		 this.tipoInconsistencia =factura.getTipoInconsistencia();
+		 this.reconReserva =factura.getReconReserva();
+		 this.idGLosa =factura.getIdGLosa();
+		 this.idGenerada =factura.getIdGenerada();
+		 this.idAuditoria =factura.getIdAuditoria();
+		 this.idEnvio =factura.getIdEnvio();
+		 this.idSolPago =factura.getIdSolPago();
+		 this.idProfesional =factura.getIdProfesional();
+		 this.indPparcial =factura.getIndPparcial();
+		 this.indPporcentaje =factura.getIndPporcentaje();
+		 this.fechaGenerada =factura.getFechaGenerada();
+		 this.fechaAuditoria =factura.getFechaAuditoria();
+		 this.indVRCertificado =factura.getIndVRCertificado();
+		 this.fechaEnvio =factura.getFechaEnvio();
+		 this.fechaSolpago =factura.getFechaSolpago();
+		 this.idSIARP =factura.getIdSIARP();
+		 this.codSTIKKER =factura.getCodSTIKKER();
+		 this.retornoSISE =factura.getRetornoSISE();
+		 this.idSolpagoANT =factura.getIdSolpagoANT();
+		 this.indCausaOK =factura.getIndCausaOK();
+		 this.idSIARPNC =factura.getIdSIARPNC();
+		 this.retornoSISENC =factura.getRetornoSISENC();
+		 this.idSolNC =factura.getIdSolNC();
+		 this.idDepartamento =factura.getIdDepartamento();
+		 this.idMunicipio =factura.getIdMunicipio();
+		 this.audConcurrente =factura.getAudConcurrente();
+		 this.idRadicador =factura.getIdRadicador();
+		 this.idAuditorConcurrente =factura.getIdAuditorConcurrente();
+		 this.fechaRadicacion =factura.getFechaRadicacion();
+		 this.codSucursal =factura.getCodSucursal();
+		 this.idProceso =factura.getIdProceso();
+		 this.codSAP =factura.getCodSAP();	 
+
+	}
+	
+	
+	private Long 		idCuenta;
+	private Long 		idFactura;
+	private String 		idTipoDocEmpresa;
+	private String 		idEmpresa;
+	private Integer 	dvEmpresa;
+	private String 		idTipoDoc;
+	private String 		idPersona;	
+	private String 		idDX;
+	private String 		nombreDX; 
+	private Long 		idFuratFurep;
+	private Date 		fechaAtep;
+	private String 		tipoSiniestro;
+	private Double 		valorNeto;
+	private Double 		valorBruto;
+	private String 		numeroAutorizacion;  
+	private Integer 	indRecobro;   
+	private Integer 	indReingreso;
+	private String 		indEstadoFactura;
+	private Date 		fechaEstado;
+	private String		descripcionGlosa;
+	private String		origenGlosa;
+	private Double		valorGlosa;
+	private Double		notaCredito;
+	private Double  	notaDebito;
+	private Date 		fechaModificacionAUD;   
+	private String 		usuarioAUD;
+	private String 		maquinaAUD;
+	private String 		operacionAUD;
+	private String 		estadoAUD;
+	private String 		factura;
+	private Date 		fechaFactura;
+	private String		observacion;
+	private Integer 	idSeccional;
+	private String		comentRecobro;
+	private String		comentNegacion;
+	private String		comentOrigen;
+	private Double	 	valorIVA;
+	private String		causaRecobro;
+	private Integer		idTipoSOl;
+	private String 		idTipoDocProv;
+	private String 		idProveedor;
+	private String 		prefijoFactura;
+	private Date 		fechaServicio;
+	private Date 		fechaAutorizacion;
+	private Long 		idSucursal; 
+	private String 		tipoInconsistencia;
+	private String 		reconReserva;
+	private Long		idGLosa;
+	private Long		idGenerada;
+	private Long		idAuditoria;
+	private Long		idEnvio;
+	private Long		idSolPago;
+	private Long		idProfesional;
+	private Integer 	indPparcial;
+	private Integer 	indPporcentaje;
+	private Date 		fechaGenerada;
+	private Date 		fechaAuditoria;
+	private Integer 	indVRCertificado;
+	private Date		fechaEnvio;
+	private Date		fechaSolpago;
+	private Long	 	idSIARP;
+	private Long 		codSTIKKER;
+	private String		retornoSISE;
+	private String		idSolpagoANT;
+	private Integer		indCausaOK;
+	private Long 		idSIARPNC;
+	private String		retornoSISENC;
+	private Long		idSolNC;
+	private Integer		idDepartamento;
+	private Integer		idMunicipio;
+	private String		audConcurrente;
+	private String		idRadicador;
+	private String		idAuditorConcurrente;
+	private Date		fechaRadicacion;
+	private Integer		codSucursal;
+	private Long		idProceso;
+	private String		codSAP;	
+
+}

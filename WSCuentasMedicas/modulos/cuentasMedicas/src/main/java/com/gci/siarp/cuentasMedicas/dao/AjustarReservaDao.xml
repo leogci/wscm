@@ -1,0 +1,71 @@
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.gci.siarp.cuentasMedicas.dao.AjustarReservaDao">
+
+	<select id="listadoFacturasR" resultType="com.gci.siarp.cuentasMedicas.domain.Factura">
+		SELECT TOP 100 ID_CUENTA idCuenta,ID_FACTURA idFactura,ID_TIPO_DOC_EMPRESA	idTipoDocEmpresa,ID_EMPRESA	idEmpresa,DV_EMPRESA dvEmpresa,ID_TIPO_DOC idTipoDoc,ID_PERSONA idPersona,
+		 ID_DX idDX,	NOMBRE_DX nombreDX,	ID_FURAT_FUREP idFuratFurep,FECHA_ATEP fechaAtep,TIPO_SINIESTRO tipoSiniestro,valor_neto valorNeto,	valor_bruto valorBruto,	NUMERO_AUTORIZACION numeroAutorizacion,
+		 IND_RECOBRO indRecobro,	IND_REINGRESO indReingreso,	IND_ESTADO_FACTURA indEstadoFactura,FECHA_ESTADO fechaEstado, DESCRIPCION_GLOSA descripcionGlosa, ORIGEN_GLOSA origenGlosa, valor_glosa valorGlosa,
+		 CASE WHEN NOTA_CREDITO =NULL THEN 0 ELSE NOTA_CREDITO END  notaCredito, NOTA_DEBITO notaDebito, fact.FECHA_MODIFICACION_AUD fechaModificacionAUD, fact.USUARIO_AUD	usuarioAUD,	fact.MAQUINA_AUD maquinaAUD,
+		 fact.OPERACION_AUD operacionAUD, fact.ESTADO_AUD estadoAUD,FACTURA factura,FECHA_FACTURA fechaFactura,OBSERVACION	observacion,ID_SECCIONAL idSeccional, COMENT_RECOBRO comentRecobro,	COMENT_NEGACION comentNegacion,
+		 COMENT_ORIGEN comentOrigen,	VALOR_IVA valorIVA,	CAUSA_RECOBRO causaRecobro,	ID_TIPO_SOL idTipoSOl,ID_TIPO_DOC_PROV idTipoDocProv,ID_PROVEEDOR idProveedor,PREFIJO_FACTURA prefijoFactura,
+		 FECHA_SERVICIO fechaServicio,FECHA_AUTORIZACION fechaAutorizacion,ID_SUCURSAL idSucursal,TIPO_INCONSISTENCIA tipoInconsistencia,RECON_RESERVA reconReserva,ID_GLOSA idGLosa,ID_GENERADA idGenerada,
+		 ID_AUDITORIA idAuditoria,ID_ENVIO idEnvio,ID_SOLPAGO idSolPago,ID_PROFESIONAL idProfesional,IND_PPARCIAL indPparcial,IND_PPORCENTAJE indPporcentaje,FECHA_GENERADA fechaGenerada,
+		 FECHA_AUDITORIA fechaAuditoria,	IND_VRCERTIFICADO indVRCertificado,	FECHA_ENVIO fechaEnvio,	FECHA_SOLPAGO fechaSolpago,	ID_SIARP idSIARP,COD_STIKKER codSTIKKER,RETORNO_SISE retornoSISE,
+		 ID_SOLPAGO_ANT idSolpagoANT,IND_CAUSA_OK indCausaOK,ID_SIARP_NC idSIARPNC,RETORNO_SISE_NC retornoSISENC,ID_SOLNC idSolNC,ID_DEPARTAMENTO idDepartamento,ID_MUNICIPIO idMunicipio,
+		 AUD_CONCURRENTE audConcurrente,	ID_RADICADOR idRadicador,ID_AUDITOR_CONCURRENTE idAuditorConcurrente,FECHA_RADICACION fechaRadicacion, COD_SUCURSAL codSucursal, ID_PROCESO idProceso,
+		 COD_SAP codSAP	
+		FROM medilab_pasiste.dbo.PA_MV_FACTURA fact INNER JOIN pecono_reservas..res_ma_reserva_soa res ON fact.id_furat_furep = res.id_furat_temp
+		WHERE IND_ESTADO_FACTURA IN ('CS','CC','AC','GP') AND RECON_RESERVA ='P' AND fact.ESTADO_AUD = 'A' 
+	</select>
+	
+	<update id="actualizarReconocimiento">
+		UPDATE medilab_pasiste.dbo.PA_MV_PAGO
+	 	SET RECON_RESERVA = 'S'		
+		,OPERACION_AUD = 'A'
+ 		WHERE ID_CUENTA = #{idCuenta} AND ID_FACTURA = #{idFactura} AND ESTADO_AUD='A'
+ 	</update>
+ 	
+ 	
+ 	<select id="consultarAjusteSALDO" resultType="Double">
+ 	SELECT SUM (res_mv_reserva_soa.reserva_asistencial)
+ 	FROM pecono_reservas.dbo.RES_MV_FACTURAS RES_MV_FACTURAS
+       INNER JOIN pecono_reservas.dbo.res_mv_reserva_soa res_mv_reserva_soa
+          ON     (RES_MV_FACTURAS.ID_SINIESTRO = res_mv_reserva_soa.id_furat_temp)
+             AND (RES_MV_FACTURAS.NRO_MOV = res_mv_reserva_soa.nro_mov)
+ 	WHERE     (RES_MV_FACTURAS.ID_SINIESTRO = #{idSiniestro})
+       AND (RES_MV_FACTURAS.ID_CUENTA = #{idCuenta})
+       AND (RES_MV_FACTURAS.ID_FACTURA = #{idFactura})
+       AND (res_mv_reserva_soa.id_tipomov = 'A')
+       AND (res_mv_reserva_soa.estado_aud = 'A')
+ 	</select>
+ 	
+ 	
+ 	<update id="actualizarReconRESERVA">
+		UPDATE medilab_pasiste.dbo.PA_MV_FACTURA
+		 SET RECON_RESERVA = 'A'
+		WHERE ID_CUENTA=#{idCuenta} AND ID_FACTURA= #{idFactura} AND ESTADO_AUD='A'
+	</update>
+
+	<select id="listaFacturasReconociento" resultType="com.gci.siarp.cuentasMedicas.domain.Factura">
+	
+	SELECT PA_MV_FACTURA.ID_FURAT_FUREP idFuratFurep,
+	       PA_MV_FACTURA.ID_CUENTA idCuenta,
+	       PA_MV_FACTURA.ID_FACTURA idFactura,
+	       SUM (PA_MV_PAGO.VALOR_PAGO)  valorNeto
+	  FROM medilab_pasiste.dbo.PA_MV_FACTURA PA_MV_FACTURA
+	       INNER JOIN medilab_pasiste.dbo.PA_MV_PAGO PA_MV_PAGO
+	          ON     (PA_MV_FACTURA.ID_CUENTA = PA_MV_PAGO.ID_CUENTA)
+	             AND (PA_MV_FACTURA.ID_FACTURA = PA_MV_PAGO.ID_FACTURA)
+	 WHERE     (PA_MV_FACTURA.ID_CUENTA = #{idCuenta})
+	       AND (PA_MV_PAGO.RECON_RESERVA = 'S')
+	GROUP BY PA_MV_FACTURA.ID_FURAT_FUREP,
+	         PA_MV_FACTURA.ID_CUENTA,
+	         PA_MV_FACTURA.ID_FACTURA
+	</select>
+
+	<select id="listaFacturasAjusteReserva">
+	
+	
+	</select>
+
+</mapper>
